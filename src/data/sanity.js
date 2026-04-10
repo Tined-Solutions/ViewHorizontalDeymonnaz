@@ -6,9 +6,41 @@
     tertiary: "#60a5fa",
     glow: "#f8fafc",
   };
+  const fallbackVisualThemePresets = {
+    tema1: {
+      primary: "#04ebad",
+      secondary: "#ddd4c6",
+      tertiary: "#b9a78e",
+      glow: "#f3eee4",
+    },
+    tema2: {
+      primary: "#af740e",
+      secondary: "#92de10",
+      tertiary: "#cfcfcf",
+      glow: "#f7daac",
+    },
+    tema3: {
+      primary: "#00ffb7",
+      secondary: "#9f8b73",
+      tertiary: "#3f4548",
+      glow: "#d8cdbc",
+    },
+  };
+
+  function getVisualThemePresets() {
+    return window.InmoVisualThemePresets || fallbackVisualThemePresets;
+  }
 
   function toText(value) {
     return String(value ?? "").trim();
+  }
+
+  function normalizeFieldToken(value) {
+    return toText(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
   }
 
   function hasValue(value) {
@@ -66,6 +98,126 @@
 
   function parsePrice(value) {
     return Math.round(parseNumber(value));
+  }
+
+  function toBooleanFlag(value) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "number") {
+      return value !== 0;
+    }
+
+    if (!hasValue(value)) {
+      return false;
+    }
+
+    return isTruthy(value) && !isFalsey(value);
+  }
+
+  function readField(record, key) {
+    if (!record || typeof record !== "object") {
+      return undefined;
+    }
+
+    if (!key || typeof key !== "string") {
+      return undefined;
+    }
+
+    const segments = key.split(".").filter(Boolean);
+    let cursor = record;
+
+    for (const segment of segments) {
+      if (!cursor || typeof cursor !== "object") {
+        return undefined;
+      }
+
+      let targetKey = segment;
+
+      if (!Object.prototype.hasOwnProperty.call(cursor, targetKey)) {
+        const normalizedSegment = normalizeFieldToken(segment);
+        const matchedKey = Object.keys(cursor).find((candidate) => normalizeFieldToken(candidate) === normalizedSegment);
+
+        if (!matchedKey) {
+          return undefined;
+        }
+
+        targetKey = matchedKey;
+      }
+
+      cursor = cursor[targetKey];
+    }
+
+    return cursor;
+  }
+
+  function metricLabelFromKey(key) {
+    const normalized = normalizeFieldToken(key);
+    const aliases = {
+      ambientes: "Ambientes",
+      dormitorios: "Dormitorios",
+      habitaciones: "Habitaciones",
+      banos: "Baños",
+      bathrooms: "Baños",
+      cochera: "Cochera",
+      garage: "Cochera",
+      garages: "Cocheras",
+      superficie: "Superficie",
+      superficietotal: "Sup. total",
+      superficiecubierta: "Sup. cubierta",
+      totalarea: "Sup. total",
+      coveredarea: "Sup. cubierta",
+      m2: "Superficie",
+      m2totales: "Sup. total",
+      m2cubiertos: "Sup. cubierta",
+      metros: "Superficie",
+      metroscuadrados: "Superficie",
+      expensas: "Expensas",
+    };
+
+    if (aliases[normalized]) {
+      return aliases[normalized];
+    }
+
+    return toText(key)
+      .replace(/[_-]+/g, " ")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/^./, (char) => char.toUpperCase());
+  }
+
+  function pickField(record, keys, fallback = "") {
+    for (const key of toArray(keys)) {
+      const value = readField(record, key);
+
+      if (hasValue(value)) {
+        return value;
+      }
+    }
+
+    return fallback;
+  }
+
+  function formatArea(value) {
+    const text = toText(value);
+
+    if (!text) {
+      return "";
+    }
+
+    if (/m2|m\^2|mt2|metros/i.test(text)) {
+      return text;
+    }
+
+    const numeric = parseNumber(text);
+
+    if (Number.isFinite(numeric) && numeric > 0) {
+      return `${Math.round(numeric)} m2`;
+    }
+
+    return text;
   }
 
   function parseDuration(value, fallbackMs = 0) {
@@ -163,13 +315,17 @@
   function inferMediaType(explicitType, src) {
     const type = toText(explicitType).toLowerCase();
 
-    if (type === "video" || type === "image") {
-      return type;
+    if (type === "video" || type.includes("video")) {
+      return "video";
+    }
+
+    if (type === "image" || type.includes("image")) {
+      return "image";
     }
 
     const lowerSrc = toText(src).split("?")[0].toLowerCase();
 
-    return /\.(mp4|webm|mov|m4v)$/i.test(lowerSrc) ? "video" : "image";
+    return /(\.m3u8$|\.mpd$|stream\.mux\.com|\.mp4$|\.webm$|\.mov$|\.m4v$)/i.test(lowerSrc) ? "video" : "image";
   }
 
   function isSanityImageUrl(url) {
@@ -222,6 +378,135 @@
     };
   }
 
+  function resolveVisualPresetKey(token) {
+    const normalized = normalizeFieldToken(token);
+
+    if (!normalized) {
+      return "tema1";
+    }
+
+    if (["tema1", "preset1", "estilo1", "opcion1", "1", "default", "clasico", "classic", "azul", "blue", "oceano", "ocean", "claro", "light"].includes(normalized)) {
+      return "tema1";
+    }
+
+    if (["tema2", "preset2", "estilo2", "opcion2", "2", "neutro", "neutral", "gris", "gray", "slate"].includes(normalized)) {
+      return "tema2";
+    }
+
+    if (["tema3", "preset3", "estilo3", "opcion3", "3", "intenso", "intense", "vibrante", "vibrant", "bold", "alto"].includes(normalized)) {
+      return "tema3";
+    }
+
+    if (/tema2|preset2|estilo2|opcion2/.test(normalized)) {
+      return "tema2";
+    }
+
+    if (/tema3|preset3|estilo3|opcion3/.test(normalized)) {
+      return "tema3";
+    }
+
+    return "tema1";
+  }
+
+  function readVisualSelectionValue(settings, config = {}) {
+    const source = settings && typeof settings === "object" ? settings : {};
+
+    const directValue = pickField(source, [
+      "configuracionVisual",
+      "configuracion_visual",
+      "visualConfig",
+      "visualConfiguration",
+      "themePreset",
+      "estiloColor",
+      "estiloColores",
+      "estilo_colores",
+      "temaVisual",
+      "tema",
+      "estiloVisual",
+      "configuracion.visual",
+      "visual.theme",
+      "visual.preset",
+      "themeChoice",
+      "theme_mode",
+      "themeMode",
+    ]);
+
+    if (hasValue(directValue)) {
+      return directValue;
+    }
+
+    return pickField(config, ["configuracionVisual", "visualConfig", "themePreset", "themeMode", "estiloColor", "estiloColores"], "");
+  }
+
+  function resolveVisualTheme(settings, config = {}) {
+    const source = settings && typeof settings === "object" ? settings : {};
+    const fallbackTheme = normalizeTheme(config.theme || config.defaultTheme || {}, defaultTheme);
+    const selectionValue = readVisualSelectionValue(source, config);
+    const selectionToken =
+      selectionValue && typeof selectionValue === "object"
+        ? normalizeFieldToken(pickField(selectionValue, ["value", "name", "title", "label", "slug.current", "slug", "key", "id"]))
+        : normalizeFieldToken(selectionValue);
+
+    const hasLegacyTheme =
+      hasValue(source.theme) ||
+      hasValue(source.theme_primary) ||
+      hasValue(source.theme_secondary) ||
+      hasValue(source.theme_tertiary) ||
+      hasValue(source.theme_glow);
+
+    if (!selectionToken && hasLegacyTheme) {
+      return {
+        ...normalizeTheme(
+          source.theme || {
+            primary: source.theme_primary,
+            secondary: source.theme_secondary,
+            tertiary: source.theme_tertiary,
+            glow: source.theme_glow,
+          },
+          fallbackTheme
+        ),
+        visualPresetKey: "legacy",
+        visualPresetValue: "legacy",
+        forceExactTheme: true,
+      };
+    }
+
+    if (selectionValue && typeof selectionValue === "object") {
+      const hasDirectPalette =
+        hasValue(selectionValue.primary) ||
+        hasValue(selectionValue.secondary) ||
+        hasValue(selectionValue.tertiary) ||
+        hasValue(selectionValue.glow) ||
+        hasValue(selectionValue.theme_primary) ||
+        hasValue(selectionValue.theme_secondary) ||
+        hasValue(selectionValue.theme_tertiary) ||
+        hasValue(selectionValue.theme_glow);
+
+      if (hasDirectPalette) {
+        return {
+          ...normalizeTheme(selectionValue, fallbackTheme),
+          visualPresetKey: "custom",
+          visualPresetValue: toText(pickField(selectionValue, ["value", "name", "title", "label"])),
+          forceExactTheme: true,
+        };
+      }
+    }
+
+    if (!selectionToken) {
+      return null;
+    }
+
+    const presetKey = resolveVisualPresetKey(selectionToken);
+    const presetTheme = getVisualThemePresets()[presetKey] || defaultTheme;
+
+    return {
+      ...normalizeTheme(presetTheme, fallbackTheme),
+      visualPresetKey: presetKey,
+      visualPresetValue: toText(selectionValue),
+      forceExactTheme: true,
+    };
+  }
+
   function normalizeMetric(metric, index) {
     if (metric === null || metric === undefined) {
       return null;
@@ -250,10 +535,80 @@
   }
 
   function normalizeMetrics(metrics) {
+    if (metrics && typeof metrics === "object" && !Array.isArray(metrics)) {
+      const metricLikeKeys = ["label", "value", "title", "name", "text", "amount", "display", "kicker", "key"];
+      const isMetricLikeObject = metricLikeKeys.some((key) => Object.prototype.hasOwnProperty.call(metrics, key));
+
+      if (!isMetricLikeObject) {
+        return Object.entries(metrics)
+          .filter(([, value]) => value !== null && value !== undefined && value !== "" && typeof value !== "object")
+          .map(([key, value], index) => normalizeMetric({ label: metricLabelFromKey(key), value }, index))
+          .filter(Boolean)
+          .slice(0, 8);
+      }
+    }
+
     return toArray(metrics)
       .map((metric, index) => normalizeMetric(metric, index))
       .filter(Boolean)
-      .slice(0, 3);
+      .slice(0, 8);
+  }
+
+  function metricPriority(label) {
+    const normalized = normalizeFieldToken(label);
+
+    if (["ambientes", "ambiente", "rooms", "roomcount"].includes(normalized)) {
+      return 0;
+    }
+
+    if (["dormitorios", "dormitorio", "habitaciones", "habitacion", "bedrooms", "bedroomcount"].includes(normalized)) {
+      return 1;
+    }
+
+    if (["banos", "bano", "bathrooms", "bathroomcount"].includes(normalized)) {
+      return 2;
+    }
+
+    if (
+      [
+        "superficie",
+        "superficietotal",
+        "superficiecubierta",
+        "suptotal",
+        "supcubierta",
+        "m2",
+        "m2totales",
+        "m2cubiertos",
+        "metros",
+        "metroscuadrados",
+        "totalarea",
+        "coveredarea",
+        "area",
+      ].includes(normalized)
+    ) {
+      return 3;
+    }
+
+    if (["cochera", "cocheras", "garage", "garages", "garagecount", "parking"].includes(normalized)) {
+      return 4;
+    }
+
+    return 99;
+  }
+
+  function sortMetricsByPriority(metrics) {
+    return toArray(metrics)
+      .slice()
+      .sort((left, right) => {
+        const leftPriority = metricPriority(left && left.label);
+        const rightPriority = metricPriority(right && right.label);
+
+        if (leftPriority !== rightPriority) {
+          return leftPriority - rightPriority;
+        }
+
+        return toText(left && left.label).localeCompare(toText(right && right.label), "es");
+      });
   }
 
   function normalizeFeature(feature) {
@@ -273,10 +628,33 @@
   }
 
   function normalizeFeatures(features) {
-    return toArray(features)
-      .map(normalizeFeature)
-      .filter(Boolean)
-      .slice(0, 12);
+    const seen = new Set();
+    const normalized = [];
+
+    toArray(features).forEach((feature) => {
+      const value = normalizeFeature(feature);
+
+      if (!value) {
+        return;
+      }
+
+      value
+        .split(/[;,|·]/)
+        .map((part) => toText(part))
+        .filter(Boolean)
+        .forEach((part) => {
+          const key = part.toLowerCase();
+
+          if (seen.has(key)) {
+            return;
+          }
+
+          seen.add(key);
+          normalized.push(part);
+        });
+    });
+
+    return normalized.slice(0, 16);
   }
 
   function normalizeDetailValue(value) {
@@ -295,6 +673,125 @@
     return toText(value);
   }
 
+  function isSimpleFieldValue(value) {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
+    if (["string", "number", "boolean"].includes(typeof value)) {
+      return true;
+    }
+
+    if (Array.isArray(value)) {
+      return value.every((item) => item === null || item === undefined || ["string", "number", "boolean"].includes(typeof item));
+    }
+
+    return false;
+  }
+
+  function shouldSkipDynamicDetailKey(normalizedKey) {
+    const excludedExact = new Set([
+      "id",
+      "slug",
+      "type",
+      "status",
+      "active",
+      "createdat",
+      "updatedat",
+      "rev",
+      "system",
+      "sortorder",
+      "order",
+      "rank",
+      "name",
+      "title",
+      "titulo",
+      "tipo",
+      "propertytype",
+      "operacion",
+      "operation",
+      "tipoperacion",
+      "badge",
+      "ubicacion",
+      "location",
+      "direccion",
+      "address",
+      "neighborhood",
+      "barrio",
+      "zona",
+      "city",
+      "ciudad",
+      "summary",
+      "description",
+      "descripcion",
+      "price",
+      "precio",
+      "valor",
+      "importe",
+      "amount",
+      "link",
+      "url",
+      "href",
+      "publishedurl",
+      "publicurl",
+      "publicacionurl",
+      "landingurl",
+      "qrlink",
+      "siteurl",
+      "canonicalurl",
+      "permalink",
+    ]);
+
+    if (excludedExact.has(normalizedKey)) {
+      return true;
+    }
+
+    const excludedStartsWith = ["media", "foto", "image", "gallery", "galeria", "theme", "duration", "servicio", "services", "ameni", "feature"];
+
+    return excludedStartsWith.some((prefix) => normalizedKey.startsWith(prefix));
+  }
+
+  function collectDynamicDetails(doc, existingDetails = []) {
+    const details = [];
+    const seen = new Set(
+      toArray(existingDetails).map((detail) => `${normalizeFieldToken(detail && detail.label)}|${normalizeFieldToken(detail && detail.value)}`)
+    );
+
+    Object.entries(doc || {}).forEach(([key, value]) => {
+      const normalizedKey = normalizeFieldToken(key);
+
+      if (!normalizedKey || shouldSkipDynamicDetailKey(normalizedKey)) {
+        return;
+      }
+
+      if (!isSimpleFieldValue(value)) {
+        return;
+      }
+
+      const rawText = typeof value === "boolean" ? (value ? "Sí" : "") : normalizeDetailValue(value);
+
+      if (!rawText) {
+        return;
+      }
+
+      const detailValue = /superficie|m2|metros|area/.test(normalizedKey) ? formatArea(rawText) || rawText : rawText;
+      const label = metricLabelFromKey(key);
+      const signature = `${normalizeFieldToken(label)}|${normalizeFieldToken(detailValue)}`;
+
+      if (seen.has(signature)) {
+        return;
+      }
+
+      seen.add(signature);
+      details.push({
+        label,
+        value: detailValue,
+      });
+    });
+
+    return details;
+  }
+
   function normalizeDetails(doc, property) {
     const details = [];
 
@@ -311,12 +808,50 @@
       });
     }
 
-    pushDetail("Tipo", property.type);
-    pushDetail("Operación", normalizeOperationLabel(doc.operacion ?? doc.operation ?? doc.badge));
-    pushDetail("Ubicación", joinUniqueTexts([doc.Ubicacion, doc.location, doc.neighborhood]));
-    pushDetail("Dirección", toText(doc.Direccion ?? doc.address));
+    pushDetail("Superficie total", formatArea(pickField(doc, ["superficieTotal", "SuperficieTotal", "totalArea", "m2Totales", "metrosTotales"])));
+    pushDetail("Superficie cubierta", formatArea(pickField(doc, ["superficieCubierta", "SuperficieCubierta", "coveredArea", "m2Cubiertos", "metrosCubiertos"])));
+    pushDetail("Expensas", toText(pickField(doc, ["expensas", "Expensas", "expenses"])));
+    pushDetail("Antigüedad", toText(pickField(doc, ["antiguedad", "Antiguedad", "age", "yearsOld"])));
 
-    return details;
+    function detailMetricKey(label) {
+      const normalized = normalizeFieldToken(label);
+
+      if (["dormitorios", "habitaciones", "bedrooms", "bedroomcount"].includes(normalized)) {
+        return "habitaciones";
+      }
+
+      if (["banos", "bano", "bathrooms", "bathroomcount"].includes(normalized)) {
+        return "banos";
+      }
+
+      if (["cochera", "cocheras", "garage", "garages", "parking"].includes(normalized)) {
+        return "cochera";
+      }
+
+      if (["superficie", "superficietotal", "superficiecubierta", "m2", "metros", "totalarea", "coveredarea", "area"].includes(normalized)) {
+        return "superficie";
+      }
+
+      if (["patio"].includes(normalized)) {
+        return "patio";
+      }
+
+      if (["piscina", "pileta", "pool"].includes(normalized)) {
+        return "piscina";
+      }
+
+      return normalized;
+    }
+
+    const metricKeys = new Set(toArray(property && property.metrics).map((metric) => detailMetricKey(metric && metric.label)).filter(Boolean));
+    const repeatedKeys = new Set(["tipo", "ubicacion", "direccion", "barrio", "moneda", "currency", "currencycode"]);
+
+    return [...details, ...collectDynamicDetails(doc, details)]
+      .filter((detail) => {
+        const key = detailMetricKey(detail && detail.label);
+        return !metricKeys.has(key) && !repeatedKeys.has(key);
+      })
+      .slice(0, 32);
   }
 
   function joinUniqueTexts(values, separator = " · ") {
@@ -364,8 +899,14 @@
 
   function buildPropertyMetrics(doc) {
     const metrics = [];
-    const ambientes = doc.Ambientes ?? doc.ambientes;
-    const cochera = doc.Cochera ?? doc.cochera;
+    const ambientes = pickField(doc, ["Ambientes", "ambientes", "rooms", "roomCount", "cantidadAmbientes"]);
+    const dormitorios = pickField(doc, ["Dormitorios", "dormitorios", "habitaciones", "bedrooms", "bedroomCount", "cantidadDormitorios"]);
+    const banos = pickField(doc, ["Banos", "banos", "Baños", "baños", "bathrooms", "bathroomCount", "cantidadBanos"]);
+    const cochera = pickField(doc, ["Cochera", "cochera", "garage", "garages", "garageCount", "cocheras"]);
+    const superficie =
+      formatArea(pickField(doc, ["superficieTotal", "SuperficieTotal", "totalArea", "m2Totales", "metrosTotales"])) ||
+      formatArea(pickField(doc, ["superficieCubierta", "SuperficieCubierta", "coveredArea", "m2Cubiertos", "metrosCubiertos"])) ||
+      formatArea(pickField(doc, ["superficie", "Superficie", "m2", "metros", "area", "metrosCuadrados", "mts2"]));
 
     if (hasValue(ambientes)) {
       metrics.push({
@@ -374,11 +915,213 @@
       });
     }
 
+    if (hasValue(dormitorios)) {
+      metrics.push({
+        label: "Dormitorios",
+        value: dormitorios,
+      });
+    }
+
+    if (hasValue(banos)) {
+      metrics.push({
+        label: "Baños",
+        value: banos,
+      });
+    }
+
     if (hasValue(cochera)) {
       metrics.push({
         label: "Cochera",
         value: cochera,
       });
+    }
+
+    if (hasValue(superficie)) {
+      metrics.push({
+        label: "Superficie",
+        value: superficie,
+      });
+    }
+
+    return metrics;
+  }
+
+  function buildDynamicMetricsFromDoc(doc) {
+    const metrics = [];
+    const seen = new Set();
+
+    Object.entries(doc || {}).forEach(([key, value]) => {
+      const normalizedKey = normalizeFieldToken(key);
+
+      if (!normalizedKey || !isSimpleFieldValue(value)) {
+        return;
+      }
+
+      let label = "";
+
+      if (/ambiente|room/.test(normalizedKey)) {
+        label = "Ambientes";
+      } else if (/dorm|habit|bedroom/.test(normalizedKey)) {
+        label = "Dormitorios";
+      } else if (/bano|bath|toilet|wc/.test(normalizedKey)) {
+        label = "Baños";
+      } else if (/cochera|garage|parking/.test(normalizedKey)) {
+        label = "Cochera";
+      } else if (/superficie|m2|metros|area|covered/.test(normalizedKey)) {
+        label = "Superficie";
+      }
+
+      if (!label) {
+        return;
+      }
+
+      const rawText = typeof value === "boolean" ? (value ? "Sí" : "") : normalizeDetailValue(value);
+
+      if (!rawText) {
+        return;
+      }
+
+      const displayValue = label === "Superficie" ? formatArea(rawText) || rawText : rawText;
+      const signature = `${normalizeFieldToken(label)}|${normalizeFieldToken(displayValue)}`;
+
+      if (seen.has(signature)) {
+        return;
+      }
+
+      seen.add(signature);
+      metrics.push({
+        label,
+        value: displayValue,
+      });
+    });
+
+    return metrics;
+  }
+
+  function buildServiceFeaturesFromFlags(doc) {
+    const candidateServices = [
+      { label: "Agua", keys: ["agua", "servicioAgua", "water"] },
+      { label: "Luz", keys: ["luz", "electricidad", "electricity", "servicioLuz"] },
+      { label: "Gas", keys: ["gas", "servicioGas"] },
+      { label: "Internet", keys: ["internet", "wifi", "wiFi", "servicioInternet"] },
+      { label: "Cloacas", keys: ["cloacas", "cloaca", "sewer"] },
+      { label: "Seguridad", keys: ["seguridad", "security"] },
+      { label: "Pileta", keys: ["pileta", "piscina", "pool"] },
+      { label: "Parrilla", keys: ["parrilla", "bbq"] },
+      { label: "SUM", keys: ["sum", "salonUsosMultiples"] },
+      { label: "Gym", keys: ["gym", "gimnasio"] },
+      { label: "Ascensor", keys: ["ascensor", "elevator"] },
+      { label: "Lavadero", keys: ["lavadero", "laundry"] },
+      { label: "Calefacción", keys: ["calefaccion", "heating"] },
+      { label: "Aire", keys: ["aire", "aireAcondicionado", "ac"] },
+    ];
+
+    const services = [];
+
+    candidateServices.forEach(({ label, keys }) => {
+      const enabled = keys.some((key) => toBooleanFlag(readField(doc, key)));
+
+      if (enabled) {
+        services.push(label);
+      }
+    });
+
+    return services;
+  }
+
+  function normalizeCountMetricValue(value) {
+    const text = normalizeDetailValue(value);
+    return text || "-";
+  }
+
+  function isPositiveAmenityValue(value) {
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "number") {
+      return value > 0;
+    }
+
+    const text = toText(value).toLowerCase();
+
+    if (!text) {
+      return false;
+    }
+
+    if (isFalsey(text) || /\b(no|sin|none|ninguno|ninguna)\b/.test(text)) {
+      return false;
+    }
+
+    if (isTruthy(text)) {
+      return true;
+    }
+
+    return true;
+  }
+
+  function hasAmenityFromDoc(doc, keys, servicePattern) {
+    const hasDirectAmenity = toArray(keys).some((key) => isPositiveAmenityValue(readField(doc, key)));
+
+    if (hasDirectAmenity) {
+      return true;
+    }
+
+    const normalizedServices = normalizeFeatures(
+      toArray(
+        pickField(doc, [
+          "Servicios",
+          "servicios",
+          "ServiciosDisponibles",
+          "serviciosDisponibles",
+          "services",
+          "serviceList",
+          "service_list",
+          "amenidades",
+          "comodidades",
+          "caracteristicas",
+          "features",
+          "amenities",
+        ])
+      )
+    ).map((service) => normalizeFieldToken(service));
+
+    return normalizedServices.some((service) => servicePattern.test(service));
+  }
+
+  function buildPanelMetrics(doc) {
+    const metrics = [];
+    const cochera = pickField(doc, ["Cochera", "cochera", "garage", "garages", "garageCount", "cocheras"]);
+    const banos = pickField(doc, ["Banos", "banos", "Baños", "baños", "bathrooms", "bathroomCount", "cantidadBanos"]);
+    const habitaciones = pickField(doc, ["Habitaciones", "habitaciones", "Dormitorios", "dormitorios", "bedrooms", "bedroomCount", "cantidadDormitorios"]);
+    const superficie =
+      formatArea(pickField(doc, ["Superficie", "superficie", "superficieTotal", "SuperficieTotal", "totalArea", "m2Totales", "metrosTotales"])) ||
+      formatArea(pickField(doc, ["superficieCubierta", "SuperficieCubierta", "coveredArea", "m2Cubiertos", "metrosCubiertos"]));
+    const piscina = hasAmenityFromDoc(doc, ["Piscina", "piscina", "pileta", "pool"], /piscina|pileta|pool/);
+    const patio = hasAmenityFromDoc(doc, ["Patio", "patio"], /patio/);
+
+    if (hasValue(cochera)) {
+      metrics.push({ label: "Cochera", value: normalizeCountMetricValue(cochera) });
+    }
+
+    if (hasValue(banos)) {
+      metrics.push({ label: "Baños", value: normalizeCountMetricValue(banos) });
+    }
+
+    if (hasValue(habitaciones)) {
+      metrics.push({ label: "Habitaciones", value: normalizeCountMetricValue(habitaciones) });
+    }
+
+    if (hasValue(superficie)) {
+      metrics.push({ label: "Superficie", value: superficie });
+    }
+
+    if (piscina) {
+      metrics.push({ label: "Piscina", value: "Sí" });
+    }
+
+    if (patio) {
+      metrics.push({ label: "Patio", value: "Sí" });
     }
 
     return metrics;
@@ -429,7 +1172,16 @@
       };
     }
 
-    const src = safeUrl(item.src ?? item.url ?? item.asset?.url ?? item.image?.asset?.url ?? item.video?.asset?.url ?? item.file?.asset?.url);
+    const playbackId = toText(
+      pickField(item, [
+        "playbackId",
+        "asset.metadata.playbacks.0._id",
+        "video.asset.metadata.playbacks.0._id",
+        "file.asset.metadata.playbacks.0._id",
+      ])
+    );
+    const playbackUrl = playbackId ? `https://stream.mux.com/${playbackId}.m3u8` : "";
+    const src = safeUrl(item.src ?? item.url ?? item.asset?.url ?? item.image?.asset?.url ?? item.video?.asset?.url ?? item.file?.asset?.url ?? playbackUrl);
 
     if (!src) {
       return null;
@@ -438,27 +1190,52 @@
     const mediaType = inferMediaType(item.type ?? item.mediaType ?? item.kind ?? item._type, src);
     const optimizedSrc = mediaType === "image" ? optimizeImageUrl(src, config) : src;
     const posterSrc = safeUrl(item.poster ?? item.posterUrl ?? item.poster_image ?? item.posterImage?.asset?.url ?? item.image?.asset?.url);
+    const durationSeconds = Number(
+      pickField(item, [
+        "durationSeconds",
+        "duration_seconds",
+        "asset.metadata.duration",
+        "video.asset.metadata.duration",
+        "file.asset.metadata.duration",
+      ])
+    );
+    const durationFromAsset = Number.isFinite(durationSeconds) && durationSeconds > 0 ? Math.round(durationSeconds * 1000) : 0;
+    const durationFromField = parseDuration(item.duration ?? item.durationMs ?? item.duration_ms, 0);
 
     return {
       type: mediaType,
       src: optimizedSrc,
       caption: toText(item.caption ?? item.alt ?? item.title ?? item.name),
-      duration: parseDuration(item.duration ?? item.durationMs ?? item.duration_ms, 0),
+      duration: durationFromAsset || durationFromField,
       poster: optimizeImageUrl(posterSrc, config),
     };
   }
 
   function normalizeMedia(media, totalDurationMs, config = {}) {
-    const items = toArray(media)
-      .map((item) => normalizeMediaItem(item, config))
-      .filter((item) => item && item.src);
+    const seenSources = new Set();
+    const items = [];
+
+    toArray(media).forEach((entry) => {
+      const sourceItems = Array.isArray(entry) ? entry : [entry];
+
+      sourceItems.forEach((item) => {
+        const normalizedItem = normalizeMediaItem(item, config);
+
+        if (!normalizedItem || !normalizedItem.src || seenSources.has(normalizedItem.src)) {
+          return;
+        }
+
+        seenSources.add(normalizedItem.src);
+        items.push(normalizedItem);
+      });
+    });
 
     if (items.length > 0) {
       const derivedDuration = Math.max(1000, Math.round(totalDurationMs / items.length));
 
       items.forEach((item) => {
         if (!item.duration) {
-          item.duration = derivedDuration;
+          item.duration = item.type === "video" ? 0 : derivedDuration;
         }
       });
     }
@@ -487,47 +1264,54 @@
     }
 
     const fallbackDurationMs = Number(config.defaultDurationMs) || 20000;
-    const totalDurationMs = parseDuration(doc.durationMs ?? doc.duration_ms ?? doc.slideDurationMs, fallbackDurationMs);
-    const media = normalizeMedia(doc.media ?? doc.fotos ?? doc.images ?? doc.gallery, totalDurationMs, config);
+    const totalDurationMs = parseDuration(pickField(doc, ["durationMs", "duration_ms", "slideDurationMs", "slideDuration", "duration"]), fallbackDurationMs);
+    const media = normalizeMedia(
+      [
+        pickField(doc, ["media", "Media"]),
+        pickField(doc, ["fotos", "Fotos"]),
+        pickField(doc, ["images", "Images"]),
+        pickField(doc, ["gallery", "Gallery"]),
+        pickField(doc, ["galeria", "Galeria"]),
+        pickField(doc, ["videoMp4", "video_mp4", "videoFile", "video_file"]),
+        pickField(doc, ["video", "Video"]),
+        pickField(doc, ["videos", "Videos"]),
+        pickField(doc, ["videoGallery", "video_gallery", "videoGalleryItems", "videoItems"]),
+        pickField(doc, ["videoUrl", "video_url", "videoSrc", "video_src", "videoFile", "video_file"]),
+      ],
+      totalDurationMs,
+      config
+    );
 
     if (media.length === 0) {
       return null;
     }
 
-    const type = toText(doc.Tipo ?? doc.tipo ?? doc.type ?? doc.propertyType);
-    const operationLabel = normalizeOperationLabel(doc.operacion ?? doc.operation ?? doc.badge);
-    const location = joinUniqueTexts([doc.Ubicacion, doc.location, doc.neighborhood]) || toText(doc.Direccion ?? doc.address);
+    const type = toText(pickField(doc, ["Tipo", "tipo", "type", "propertyType", "inmuebleTipo"]));
+    const operationLabel = normalizeOperationLabel(pickField(doc, ["operacion", "operation", "tipoOperacion", "operationType", "badge"]));
+    const location = joinUniqueTexts([
+      pickField(doc, ["Ubicacion", "ubicacion", "location"]),
+      pickField(doc, ["neighborhood", "barrio", "zona"]),
+      pickField(doc, ["city", "ciudad"]),
+    ]) || toText(pickField(doc, ["Direccion", "direccion", "address"]));
     const publishedUrl = toText(
-      doc.publishedUrl ??
-        doc.Link ??
-        doc.propertyUrl ??
-        doc.publicUrl ??
-        doc.qrLink ??
-        doc.link ??
-        doc.url ??
-        doc.href ??
-        doc.siteUrl ??
-        doc.canonicalUrl ??
-        doc.permalink
+      pickField(doc, [
+        "publishedUrl",
+        "Link",
+        "propertyUrl",
+        "publicUrl",
+        "qrLink",
+        "link",
+        "url",
+        "href",
+        "siteUrl",
+        "canonicalUrl",
+        "permalink",
+        "publicacionUrl",
+        "landingUrl",
+      ])
     );
 
-    let metrics = normalizeMetrics(doc.metrics ?? doc.stats ?? doc.highlights);
-    const generatedMetrics = normalizeMetrics(buildPropertyMetrics(doc));
-
-    if (generatedMetrics.length > 0) {
-      const seenMetrics = new Set(metrics.map((metric) => metric.label.toLowerCase()));
-
-      generatedMetrics.forEach((metric) => {
-        const key = metric.label.toLowerCase();
-
-        if (seenMetrics.has(key)) {
-          return;
-        }
-
-        seenMetrics.add(key);
-        metrics.push(metric);
-      });
-    }
+    const metrics = buildPanelMetrics(doc);
 
     const property = {
       id: toText(doc.id ?? doc.slug?.current ?? doc.slug ?? doc._id ?? slugify(name)) || slugify(name),
@@ -536,24 +1320,31 @@
       title: toText(doc.title ?? doc.titulo ?? name),
       type,
       location,
-      price: parsePrice(doc.price ?? doc.precio),
+      price: parsePrice(pickField(doc, ["price", "precio", "valor", "importe", "amount"])),
+      currency: toText(pickField(doc, ["moneda", "currency", "currencyCode", "currency_code"])),
       badge: toText(doc.badge) || operationLabel,
       summary: buildPropertySummary(doc, type, location, operationLabel),
       publishedUrl,
-      metrics: metrics.slice(0, 3),
-      features: normalizeFeatures(
-        doc.Servicios ??
-          doc.servicios ??
-          doc.ServiciosDisponibles ??
-          doc.serviciosDisponibles ??
-          doc.services ??
-          doc.serviceList ??
-          doc.amenidades ??
-          doc.comodidades ??
-          doc.caracteristicas ??
-          doc.features ??
-          doc.amenities
-      ),
+      metrics,
+      features: normalizeFeatures([
+        ...toArray(
+          pickField(doc, [
+            "Servicios",
+            "servicios",
+            "ServiciosDisponibles",
+            "serviciosDisponibles",
+            "services",
+            "serviceList",
+            "service_list",
+            "amenidades",
+            "comodidades",
+            "caracteristicas",
+            "features",
+            "amenities",
+          ])
+        ),
+        ...buildServiceFeaturesFromFlags(doc),
+      ]),
       theme: normalizeTheme(doc.theme ?? {
         primary: doc.theme_primary,
         secondary: doc.theme_secondary,
@@ -597,6 +1388,7 @@
       },
       properties: [],
       siteBaseUrl: toText(config.publicBaseUrl),
+      visualTheme: resolveVisualTheme({}, config),
       state: "unconfigured",
       message: "Completa projectId y dataset en src/config/sanity.js.",
     };
@@ -619,7 +1411,9 @@
   }
 
   function buildSettingsQuery() {
-    return `*[_type == $settingsType][0]{
+    return `*[_type in $settingsTypes] | order(_updatedAt desc)[0]{
+      ...,
+      _type,
       companyName,
       companyTagline,
       publicBaseUrl,
@@ -631,6 +1425,7 @@
 
   function buildPropertiesQuery() {
     return `*[_type in $propertyTypes && active != false] | order(coalesce(sortOrder, sort_order, order, rank, 0) asc, coalesce(name, title, titulo, slug.current, _id) asc) {
+      ...,
       _id,
       _type,
       id,
@@ -639,32 +1434,91 @@
       title,
       titulo,
       Tipo,
+      tipo,
       operacion,
+      tipoOperacion,
       type,
       propertyType,
       Ubicacion,
+      ubicacion,
       Direccion,
+      direccion,
       location,
       address,
       neighborhood,
+      barrio,
+      zona,
+      city,
+      ciudad,
       Ambientes,
+      ambientes,
+      Dormitorios,
+      dormitorios,
+      habitaciones,
+      Banos,
+      banos,
       Cochera,
+      cochera,
+      garage,
+      garages,
+      superficie,
+      Superficie,
+      superficieTotal,
+      SuperficieTotal,
+      superficieCubierta,
+      SuperficieCubierta,
+      totalArea,
+      coveredArea,
+      m2,
+      metros,
+      m2Totales,
+      metrosTotales,
+      m2Cubiertos,
+      metrosCubiertos,
+      expensas,
+      Expensas,
+      antiguedad,
+      Antiguedad,
       Servicios,
       servicios,
       ServiciosDisponibles,
       serviciosDisponibles,
       services,
       serviceList,
+      service_list,
       amenidades,
       comodidades,
       caracteristicas,
+      amenities,
+      agua,
+      luz,
+      gas,
+      internet,
+      wifi,
+      cloacas,
+      seguridad,
+      pileta,
+      piscina,
+      parrilla,
+      sum,
+      gimnasio,
+      gym,
+      ascensor,
+      lavadero,
+      calefaccion,
+      aire,
+      aireAcondicionado,
       price,
       precio,
+      valor,
+      importe,
       badge,
       Link,
       publishedUrl,
       propertyUrl,
       publicUrl,
+      publicacionUrl,
+      landingUrl,
       qrLink,
       link,
       url,
@@ -690,19 +1544,53 @@
       order,
       rank,
       active,
+      videoMp4{
+        ...,
+        "src": coalesce(src, url, asset->url),
+        "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url),
+        "caption": coalesce(caption, alt, title, name),
+        "duration": coalesce(duration, durationMs, duration_ms),
+        "type": coalesce(type, mediaType, kind, _type)
+      },
+      video{
+        ...,
+        "src": coalesce(src, url, asset->url, image.asset->url, video.asset->url, file.asset->url),
+        "playbackId": coalesce(asset->metadata.playbacks[policy == "public"][0]._id, video.asset->metadata.playbacks[policy == "public"][0]._id, file.asset->metadata.playbacks[policy == "public"][0]._id),
+        "durationSeconds": coalesce(asset->metadata.duration, asset->metadata.durationMs, video.asset->metadata.duration, file.asset->metadata.duration),
+        "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
+        "caption": coalesce(caption, alt, title, name),
+        "duration": coalesce(duration, durationMs, duration_ms),
+        "type": coalesce(type, mediaType, kind, _type)
+      },
+      videos{
+        ...,
+        "src": coalesce(src, url, asset->url, image.asset->url, video.asset->url, file.asset->url),
+        "playbackId": coalesce(asset->metadata.playbacks[policy == "public"][0]._id, video.asset->metadata.playbacks[policy == "public"][0]._id, file.asset->metadata.playbacks[policy == "public"][0]._id),
+        "durationSeconds": coalesce(asset->metadata.duration, asset->metadata.durationMs, video.asset->metadata.duration, file.asset->metadata.duration),
+        "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
+        "caption": coalesce(caption, alt, title, name),
+        "duration": coalesce(duration, durationMs, duration_ms),
+        "type": coalesce(type, mediaType, kind, _type)
+      },
       media[]{
         ...,
         "src": coalesce(src, url, asset->url, image.asset->url, video.asset->url, file.asset->url),
+        "playbackId": coalesce(asset->metadata.playbacks[policy == "public"][0]._id, video.asset->metadata.playbacks[policy == "public"][0]._id, file.asset->metadata.playbacks[policy == "public"][0]._id),
+        "durationSeconds": coalesce(asset->metadata.duration, asset->metadata.durationMs, video.asset->metadata.duration, file.asset->metadata.duration),
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
         "caption": coalesce(caption, alt, title, name),
-        "duration": coalesce(duration, durationMs, duration_ms)
+        "duration": coalesce(duration, durationMs, duration_ms),
+        "type": coalesce(type, mediaType, kind, _type)
       },
       fotos[]{
         ...,
         "src": asset->url,
+        "playbackId": coalesce(asset->metadata.playbacks[policy == "public"][0]._id, video.asset->metadata.playbacks[policy == "public"][0]._id, file.asset->metadata.playbacks[policy == "public"][0]._id),
+        "durationSeconds": coalesce(asset->metadata.duration, asset->metadata.durationMs, video.asset->metadata.duration, file.asset->metadata.duration),
         "poster": asset->url,
         "caption": coalesce(caption, alt, title, name),
-        "duration": coalesce(duration, durationMs, duration_ms)
+        "duration": coalesce(duration, durationMs, duration_ms),
+        "type": coalesce(type, mediaType, kind, _type)
       }
     }`;
   }
@@ -727,14 +1615,32 @@
     }
 
     try {
-      const settingsType = toText(config.settingsType) || "siteSettings";
+      const settingsTypes = Array.from(
+        new Set(
+          [
+            ...toArray(config.settingsTypes).map((item) => toText(item)).filter(Boolean),
+            toText(config.settingsType) || "siteSettings",
+            "siteSettings",
+            "visualSettings",
+            "configuracionVisual",
+            "configuracionDashboard",
+            "siteConfig",
+          ].filter(Boolean)
+        )
+      );
       const propertyTypes = Array.isArray(config.propertyTypes) && config.propertyTypes.length > 0 ? config.propertyTypes.map(toText).filter(Boolean) : [toText(config.propertyType) || "property"];
       const [settingsDocument, propertyDocuments] = await Promise.all([
-        client.fetch(buildSettingsQuery(), { settingsType }),
+        client.fetch(buildSettingsQuery(), { settingsTypes }),
         client.fetch(buildPropertiesQuery(), { propertyTypes }),
       ]);
 
       const company = normalizeCompany(settingsDocument, config);
+      let visualTheme = resolveVisualTheme(settingsDocument, config);
+
+      if (!visualTheme && Array.isArray(propertyDocuments) && propertyDocuments.length > 0) {
+        visualTheme = resolveVisualTheme(propertyDocuments[0], config);
+      }
+
       const properties = Array.isArray(propertyDocuments) ? propertyDocuments.map((document) => normalizeProperty(document, config)).filter(Boolean) : [];
       const siteBaseUrl = toText(settingsDocument && (settingsDocument.publicBaseUrl || settingsDocument.siteBaseUrl)) || toText(config.publicBaseUrl);
 
@@ -743,6 +1649,7 @@
           company,
           properties,
           siteBaseUrl,
+          visualTheme,
           state: "empty",
           message: "Todavia no hay inmuebles publicados.",
         };
@@ -754,6 +1661,7 @@
         company,
         properties,
         siteBaseUrl,
+        visualTheme,
         state: "ready",
       };
     } catch (error) {
@@ -763,5 +1671,66 @@
         message: error instanceof Error ? error.message : "No se pudo conectar con Sanity.",
       };
     }
+  };
+
+  namespace.listenCatalog = function listenCatalog(config = {}, callback) {
+    if (typeof callback !== "function") return () => {};
+
+    const projectId = toText(config.projectId);
+    const dataset = toText(config.dataset);
+
+    if (!projectId || !dataset) {
+      return () => {};
+    }
+
+    const client = createClientInstance(config);
+
+    if (!client || typeof client.listen !== "function") {
+      return () => {};
+    }
+
+    const settingsTypes = Array.from(
+      new Set(
+        [
+          ...toArray(config.settingsTypes).map((item) => toText(item)).filter(Boolean),
+          toText(config.settingsType) || "siteSettings",
+          "siteSettings",
+          "visualSettings",
+          "configuracionVisual",
+          "configuracionDashboard",
+          "siteConfig",
+        ].filter(Boolean)
+      )
+    );
+
+    const propertyTypes = Array.isArray(config.propertyTypes) && config.propertyTypes.length > 0 ? config.propertyTypes.map(toText).filter(Boolean) : [toText(config.propertyType) || "property"];
+
+    // Combine all types to listen for any document mutations within these types.
+    const allRelevantTypes = [...settingsTypes, ...propertyTypes];
+    
+    // We listen to any changes (creation, update, deletion) on the relevant types.
+    const query = `*[_type in $types]`;
+    const params = { types: allRelevantTypes };
+
+    let updateTimeout;
+
+    const subscription = client.listen(query, params, { includeResult: false, visibility: "query" })
+      .subscribe((update) => {
+        // Debounce to avoid multiple rapid re-fetches if many documents are published down at once
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(async () => {
+          try {
+            const latestCatalog = await namespace.loadCatalog(config);
+            callback(latestCatalog);
+          } catch (error) {
+            console.error("Error al actualizar catálogo vía Listen API:", error);
+          }
+        }, 1000);
+      });
+
+    return () => {
+      clearTimeout(updateTimeout);
+      subscription.unsubscribe();
+    };
   };
 })();

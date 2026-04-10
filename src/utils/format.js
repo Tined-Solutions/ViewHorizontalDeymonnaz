@@ -36,6 +36,51 @@
     return `${red}, ${green}, ${blue}`;
   }
 
+  function hexToRgba(hex, alpha = 1) {
+    const [red, green, blue] = hexToRgbParts(hex);
+    const safeAlpha = clamp(alpha, 0, 1);
+    return `rgba(${red}, ${green}, ${blue}, ${safeAlpha})`;
+  }
+
+  function normalizePresetToken(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  }
+
+  function resolveThemePreset(theme) {
+    const source = theme && typeof theme === "object" ? theme : {};
+    const token = normalizePresetToken(source.visualPresetKey || source.visualPreset || source.visualPresetValue || source.estiloColor || source.themeMode);
+
+    if (!token) {
+      return "";
+    }
+
+    if (["tema1", "estilo1", "style1", "preset1", "claro", "light", "1"].includes(token)) {
+      return "tema1";
+    }
+
+    if (["tema2", "estilo2", "style2", "preset2", "neutro", "neutral", "2"].includes(token)) {
+      return "tema2";
+    }
+
+    if (["tema3", "estilo3", "style3", "preset3", "intenso", "intense", "3"].includes(token)) {
+      return "tema3";
+    }
+
+    if (/tema2|estilo2|style2|preset2/.test(token)) {
+      return "tema2";
+    }
+
+    if (/tema3|estilo3|style3|preset3/.test(token)) {
+      return "tema3";
+    }
+
+    return "";
+  }
+
   function blendHexColors(baseHex, overlayHex, overlayWeight = 0.2) {
     const normalizedWeight = clamp(overlayWeight, 0, 1);
     const base = hexToRgbParts(baseHex);
@@ -84,12 +129,66 @@
       glow: "#f8fafc",
     };
     const source = theme && typeof theme === "object" ? theme : {};
+    const rawPrimary = normalizeHexColor(source.primary ?? source.theme_primary ?? source.themePrimary ?? source.color, fallbackTheme.primary);
+    const rawSecondary = normalizeHexColor(source.secondary ?? source.theme_secondary ?? source.themeSecondary, fallbackTheme.secondary);
+    const rawTertiary = normalizeHexColor(source.tertiary ?? source.theme_tertiary ?? source.themeTertiary, fallbackTheme.tertiary);
+    const rawGlow = normalizeHexColor(source.glow ?? source.theme_glow ?? source.themeGlow, fallbackTheme.glow);
+    const forceExactTheme = Boolean(source.forceExactTheme || source.forceExact || source.visualPresetKey || source.visualPreset);
     const palette = {
-      primary: blendHexColors(fallbackTheme.primary, normalizeHexColor(source.primary ?? source.theme_primary ?? source.themePrimary ?? source.color, fallbackTheme.primary), 0.12),
-      secondary: blendHexColors(fallbackTheme.secondary, normalizeHexColor(source.secondary ?? source.theme_secondary ?? source.themeSecondary, fallbackTheme.secondary), 0.08),
-      tertiary: blendHexColors(fallbackTheme.tertiary, normalizeHexColor(source.tertiary ?? source.theme_tertiary ?? source.themeTertiary, fallbackTheme.tertiary), 0.06),
-      glow: blendHexColors(fallbackTheme.glow, normalizeHexColor(source.glow ?? source.theme_glow ?? source.themeGlow, fallbackTheme.glow), 0.05),
+      primary: forceExactTheme ? rawPrimary : blendHexColors(fallbackTheme.primary, rawPrimary, 0.12),
+      secondary: forceExactTheme ? rawSecondary : blendHexColors(fallbackTheme.secondary, rawSecondary, 0.08),
+      tertiary: forceExactTheme ? rawTertiary : blendHexColors(fallbackTheme.tertiary, rawTertiary, 0.06),
+      glow: forceExactTheme ? rawGlow : blendHexColors(fallbackTheme.glow, rawGlow, 0.05),
     };
+    const normalizedPreset = resolveThemePreset(source);
+    const defaultSurfaces = {
+      bgTop: "#08111c",
+      bgBottom: "#030712",
+      surface0: "rgba(8, 13, 22, 0.94)",
+      surface1: "rgba(9, 14, 23, 0.9)",
+      surface2: "rgba(5, 8, 15, 0.88)",
+      border: "rgba(148, 163, 184, 0.14)",
+      borderSoft: "rgba(255, 255, 255, 0.045)",
+    };
+    const presetSurfaces = {
+      tema1: {
+        bgTop: "#25303b",
+        bgBottom: "#121922",
+        surface0: "rgba(36, 46, 58, 0.94)",
+        surface1: "rgba(30, 40, 52, 0.9)",
+        surface2: "rgba(23, 31, 42, 0.88)",
+        border: "rgba(219, 205, 183, 0.22)",
+        borderSoft: "rgba(255, 255, 255, 0.06)",
+      },
+      tema2: {
+        bgTop: "#13181d",
+        bgBottom: "#090d11",
+        surface0: "rgba(18, 23, 28, 0.94)",
+        surface1: "rgba(15, 20, 25, 0.9)",
+        surface2: "rgba(11, 15, 20, 0.88)",
+        border: "rgba(171, 162, 146, 0.2)",
+        borderSoft: "rgba(255, 255, 255, 0.052)",
+      },
+      tema3: {
+        bgTop: "#0b1218",
+        bgBottom: "#04070b",
+        surface0: "rgba(11, 18, 24, 0.95)",
+        surface1: "rgba(9, 15, 20, 0.91)",
+        surface2: "rgba(6, 11, 16, 0.89)",
+        border: "rgba(191, 163, 126, 0.26)",
+        borderSoft: "rgba(255, 255, 255, 0.058)",
+      },
+    };
+    const derivedSurfaces = {
+      bgTop: blendHexColors("#08111c", palette.primary, 0.22),
+      bgBottom: blendHexColors("#030712", palette.tertiary, 0.2),
+      surface0: hexToRgba(blendHexColors("#0a1220", palette.primary, 0.24), 0.94),
+      surface1: hexToRgba(blendHexColors("#0a111c", palette.secondary, 0.2), 0.9),
+      surface2: hexToRgba(blendHexColors("#070c15", palette.tertiary, 0.18), 0.88),
+      border: hexToRgba(blendHexColors("#94a3b8", palette.secondary, 0.35), 0.19),
+      borderSoft: "rgba(255, 255, 255, 0.055)",
+    };
+    const surfaces = presetSurfaces[normalizedPreset] || derivedSurfaces || defaultSurfaces;
 
     const root = document.documentElement;
     const primary = palette.primary;
@@ -105,10 +204,18 @@
     root.style.setProperty("--accent-3-rgb", hexToRgb(tertiary));
     root.style.setProperty("--accent-4", glow);
     root.style.setProperty("--accent-4-rgb", hexToRgb(glow));
+    root.style.setProperty("--bg-0", surfaces.bgTop);
+    root.style.setProperty("--bg-1", surfaces.bgBottom);
+    root.style.setProperty("--surface-0", surfaces.surface0);
+    root.style.setProperty("--surface-1", surfaces.surface1);
+    root.style.setProperty("--surface-2", surfaces.surface2);
+    root.style.setProperty("--surface-border", surfaces.border);
+    root.style.setProperty("--surface-border-soft", surfaces.borderSoft);
+    root.setAttribute("data-visual-style", normalizedPreset || "custom");
 
     const themeMeta = document.querySelector('meta[name="theme-color"]');
     if (themeMeta) {
-      themeMeta.setAttribute("content", "#07111c");
+      themeMeta.setAttribute("content", surfaces.bgTop || "#07111c");
     }
   }
 

@@ -4,14 +4,20 @@ Sitio estático para señalización inmobiliaria, ya preparado para Sanity. La i
 
 ## Estructura
 
-- `index.html`: entrada principal y carga del cliente de Sanity, la configuración y los scripts del front.
+- `index.html`: entrada principal y carga de scripts de configuración/datos/utilidades más el módulo principal.
 - `server.mjs`: servidor local simple para desarrollo con `npm run dev`.
 - `styles.css`: sistema visual, fondos animados y transiciones.
-- `src/main.js`: render principal en React + Framer Motion y rotación automática.
+- `src/main.js`: bootstrap de aplicación (montaje de React y wiring general).
+- `src/runtime/react-motion.js`: adaptador de runtime para React + Framer Motion.
+- `src/features/catalog-experience.js`: flujo principal de reproducción del catálogo.
+- `src/ui/status-screen.js`: pantalla de estados (conexión, vacío, error).
+- `src/ui/property-panel.js`: panel de datos, QR animado y microcomponentes del zócalo.
+- `src/ui/media-stage.js`: escenario multimedia (imagen/video + overlays).
+- `src/shared/`: helpers reutilizables por dominio (`math`, `color`, `text`, `catalog`, `media-visual`, `qr`).
 - `src/config/sanity.js`: configuración de proyecto, dataset y tipos de contenido.
-- `src/data/sanity.js`: cliente, consulta GROQ y normalización de datos.
-- `src/components/viewer.js`: renderer clásico legado, ya no se carga en la página actual.
-- `src/app.js`: lógica clásica legado, ya no se carga en la página actual.
+- `src/data/sanity.js`: cliente, consultas GROQ y normalización de datos para catálogo.
+- `src/utils/format.js`: utilidades de formato, tema visual y precarga.
+- `src/legacy/`: implementación clásica anterior (no cargada por la app actual).
 
 ## Puesta en marcha
 

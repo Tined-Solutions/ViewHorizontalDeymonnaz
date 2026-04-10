@@ -4,6 +4,7 @@
     "start": "node server.mjs"
   },
   "dependencies": {
-    "@sanity/client": "^7.20.0"
+    "@sanity/client": "^7.20.0",
+    "hls.js": "^1.6.15"
   }
 }

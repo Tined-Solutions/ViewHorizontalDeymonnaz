@@ -108,7 +108,7 @@
     }
 
     function renderPropertyDetails(property, isPropertyStart) {
-      const kickerText = [property.type, property.badge].filter(Boolean).join(" · ");
+      const kickerText = [property.type, property.badge].filter(Boolean).join(" en ");
       const features = Array.isArray(property.features) ? property.features : [];
       const metrics = Array.isArray(property.metrics) ? property.metrics : [];
       const hasPrice = Number.isFinite(property.price) && property.price > 0;

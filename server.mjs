@@ -28,13 +28,7 @@ function getContentType(filePath) {
 }
 
 function getCacheControl(filePath) {
-  const extension = path.extname(filePath).toLowerCase();
-
-  if (extension === ".html") {
-    return "no-cache";
-  }
-
-  return "public, max-age=31536000, immutable";
+  return "no-store, no-cache, must-revalidate, max-age=0";
 }
 
 async function resolveFilePath(requestUrl) {
@@ -89,26 +83,15 @@ const server = createServer(async (request, response) => {
     const contentType = getContentType(filePath);
     const cacheControl = getCacheControl(filePath);
     const lastModified = fileStats.mtime.toUTCString();
-    const ifModifiedSince = request.headers["if-modified-since"];
-
-    if (ifModifiedSince) {
-      const requestDate = new Date(ifModifiedSince);
-
-      if (!Number.isNaN(requestDate.getTime()) && fileStats.mtime <= requestDate) {
-        response.writeHead(304, {
-          "Cache-Control": cacheControl,
-          "Last-Modified": lastModified,
-        });
-        response.end();
-        return;
-      }
-    }
 
     response.writeHead(200, {
       "Cache-Control": cacheControl,
       "Content-Length": fileStats.size,
       "Content-Type": contentType,
       "Last-Modified": lastModified,
+      "Pragma": "no-cache",
+      "Expires": "0",
+      "Surrogate-Control": "no-store",
     });
 
     if (request.method === "HEAD") {
