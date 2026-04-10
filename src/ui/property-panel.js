@@ -532,8 +532,8 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
   const panelComponentReduceMotion = reduceMotion;
   const panelIntroBaseDelay = panelComponentReduceMotion ? 0 : 0.06;
   const panelClassName = performanceMode
-    ? "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-slate-950/60 p-3 shadow-[0_10px_26px_rgba(0,0,0,0.3)] backdrop-blur-sm sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7"
-    : "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-slate-950/52 p-3 shadow-[0_12px_34px_rgba(0,0,0,0.34)] backdrop-blur-sm sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7";
+    ? "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-emerald-950/32 p-3 shadow-[0_10px_26px_rgba(0,0,0,0.2)] backdrop-blur-[2px] sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7"
+    : "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-emerald-950/24 p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-[2px] sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7";
 
   const kickerValues = [property.type, property.badge]
     .map((value) => String(value ?? "").trim())
@@ -559,10 +559,10 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
   const rawDetails = Array.isArray(property.details) ? property.details : [];
   const rawFeatures = Array.isArray(property.features) ? property.features : [];
   const resolvedQrUrl = qrUrl || buildQrUrl(property, siteBaseUrl);
-  const surfaceBlur = panelVisual && Number.isFinite(panelVisual.blurPx) ? panelVisual.blurPx : 20;
-  const surfaceSaturation = panelVisual && Number.isFinite(panelVisual.saturation) ? panelVisual.saturation : 116;
-  const surfaceAlpha = panelVisual && Number.isFinite(panelVisual.bgAlpha) ? panelVisual.bgAlpha : 0.72;
-  const surfaceBorderAlpha = panelVisual && Number.isFinite(panelVisual.borderAlpha) ? panelVisual.borderAlpha : 0.14;
+  const surfaceBlur = panelVisual && Number.isFinite(panelVisual.blurPx) ? panelVisual.blurPx : 8;
+  const surfaceSaturation = panelVisual && Number.isFinite(panelVisual.saturation) ? panelVisual.saturation : 104;
+  const surfaceAlpha = panelVisual && Number.isFinite(panelVisual.bgAlpha) ? panelVisual.bgAlpha : 0.38;
+  const surfaceBorderAlpha = panelVisual && Number.isFinite(panelVisual.borderAlpha) ? panelVisual.borderAlpha : 0.08;
   const themePrimaryRgb = activeTheme ? hexToRgbString(activeTheme.primary, "") : "";
   const themeSecondaryRgb = activeTheme ? hexToRgbString(activeTheme.secondary, "") : "";
   const themeTertiaryRgb = activeTheme ? hexToRgbString(activeTheme.tertiary, "") : "";
@@ -591,13 +591,13 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
       : { stiffness: 150, damping: 24, mass: 0.8 };
   const panelAlphaMotion = useSpring(surfaceAlpha, panelVisualSpring);
   const panelBorderAlphaMotion = useSpring(surfaceBorderAlpha, panelVisualSpring);
-  const panelBackgroundMotion = useTransform(panelAlphaMotion, (value) => `rgba(2, 8, 20, ${value.toFixed(3)})`);
+  const panelBackgroundMotion = useTransform(panelAlphaMotion, (value) => `rgba(4, 34, 27, ${value.toFixed(3)})`);
   const panelBorderMotion = useTransform(panelBorderAlphaMotion, (value) => `rgba(255, 255, 255, ${value.toFixed(3)})`);
   const panelSurfaceStyle = {
     backgroundColor: panelBackgroundMotion,
     backgroundImage: `radial-gradient(circle at 14% 16%, rgba(${surfaceTintRgb}, ${surfaceHighlightAlpha}) 0%, rgba(${surfaceTintRgb}, ${surfaceTintAlpha}) 34%, rgba(2, 8, 20, 0) 72%), radial-gradient(circle at 84% 72%, rgba(${surfaceTintRgbSecondary}, ${Math.max(surfaceTintAlpha * 0.95, 0.07).toFixed(3)}) 0%, rgba(${surfaceTintRgbSecondary}, 0) 64%), linear-gradient(180deg, rgba(${surfaceTintRgbTertiary}, 0.12) 0%, rgba(2, 8, 20, 0) 45%)`,
     borderColor: panelBorderMotion,
-    boxShadow: `0 16px 54px rgba(${surfaceTintRgb}, ${surfaceShadowAlpha}), 0 24px 68px rgba(0,0,0,0.44)`,
+    boxShadow: `0 14px 42px rgba(${surfaceTintRgb}, ${surfaceShadowAlpha}), 0 20px 54px rgba(0,0,0,0.24)`,
     backdropFilter: `blur(${surfaceBlur}px) saturate(${surfaceSaturation}%)`,
     WebkitBackdropFilter: `blur(${surfaceBlur}px) saturate(${surfaceSaturation}%)`,
   };

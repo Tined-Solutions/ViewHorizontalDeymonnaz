@@ -2,30 +2,30 @@ import { pickField, sanitizeHexColor } from './mappers.js';
 import { toText, normalizeFieldToken, hasValue } from './utils.js';
 
 export const defaultTheme = {
-    primary: "#ffffff",
-    secondary: "#dbeafe",
-    tertiary: "#60a5fa",
-    glow: "#f8fafc",
+    primary: "#0a7a63",
+    secondary: "#064538",
+    tertiary: "#14b594",
+    glow: "#ccfff2",
   };
 
 export const visualThemePresets = {
    tema1: { // Claros (Inspirado en paredes y molduras)
-      primary: "#05ca6e",   // Blanco roto
-      secondary: "#05a359", // Gris muy claro (sombras de moldura)
-      tertiary: "#287953",  // Beige hueso
-      glow: "#026034",      // Blanco puro
+      primary: "#02251d",   // Verde bosque oscuro
+      secondary: "#064538", // Verde profundo
+      tertiary: "#0a7a63",  // Verde agua
+      glow: "#16c3a0",      // Brillo teal
     },
     tema2: { // Sobrios/Neutros (Inspirado en panel y silla)
-      primary: "#6A6A6A",   // Gris oscuro/madera quemada
-      secondary: "#A99580", // Taupe/marrón grisáceo
-      tertiary: "#424242",  // Carbón/silla de oficina
-      glow: "#CFC5BB",      // Resplandor neutro
+      primary: "#054236",   // Verde profundo medio
+      secondary: "#0a6a55", // Verde teal
+      tertiary: "#10a986",  // Verde agua claro
+      glow: "#5be7c8",     // Resplandor neutro
     },
     tema3: { // Intenso (Inspirado en madera cálida y naturaleza)
-      primary: "#BC7736",   // Pino cálido/miel (de la puerta)
-      secondary: "#228B22", // Verde bosque refinado (de la pantalla)
-      tertiary: "#3F3F3F",  // Gris intenso (profundidad)
-      glow: "#FFECC9",      // Resplandor cálido de la madera
+      primary: "#065143",   // Verde jade
+      secondary: "#0f7c65", // Verde intenso
+      tertiary: "#1cb892",  // Teal luminoso
+      glow: "#b7fff3",      // Resplandor cálido de la madera
     },
   };
 

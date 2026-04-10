@@ -1,11 +1,11 @@
 import { clampNumber, mixChannel } from "./math.js";
 
 export const DEFAULT_MEDIA_VISUAL = Object.freeze({
-  brightness: 132,
-  red: 120,
-  green: 186,
-  blue: 224,
-  saturation: 0.42,
+  brightness: 118,
+  red: 18,
+  green: 138,
+  blue: 112,
+  saturation: 0.58,
 });
 
 const mediaVisualCache = new Map();
@@ -33,29 +33,29 @@ export function buildPanelVisual(visual, performanceMode) {
   );
   const normalizedBrightness = clampNumber((safeVisual.brightness - 44) / 196, 0, 1);
   const normalizedSaturation = clampNumber(safeVisual.saturation, 0, 1);
-  const blurBase = performanceMode ? 12 : 14;
-  const blurRange = performanceMode ? 18 : 24;
-  const blurInfluence = (1 - normalizedBrightness) * (0.62 + normalizedSaturation * 0.48);
-  const saturationBase = performanceMode ? 104 : 108;
-  const saturationRange = performanceMode ? 24 : 34;
-  const tintWeight = 0.3 + normalizedSaturation * 0.42;
-  const tintRed = mixChannel(110, safeVisual.red, tintWeight);
-  const tintGreen = mixChannel(176, safeVisual.green, tintWeight);
-  const tintBlue = mixChannel(224, safeVisual.blue, tintWeight);
+  const blurBase = performanceMode ? 4 : 5;
+  const blurRange = performanceMode ? 8 : 10;
+  const blurInfluence = (1 - normalizedBrightness) * (0.48 + normalizedSaturation * 0.34);
+  const saturationBase = performanceMode ? 96 : 100;
+  const saturationRange = performanceMode ? 14 : 18;
+  const tintWeight = 0.34 + normalizedSaturation * 0.38;
+  const tintRed = mixChannel(18, safeVisual.red, tintWeight);
+  const tintGreen = mixChannel(132, safeVisual.green, tintWeight);
+  const tintBlue = mixChannel(106, safeVisual.blue, tintWeight);
   const tintRgb = `${tintRed}, ${tintGreen}, ${tintBlue}`;
-  const priceTop = `rgb(${mixChannel(248, tintRed, 0.18)}, ${mixChannel(252, tintGreen, 0.18)}, ${mixChannel(255, tintBlue, 0.18)})`;
-  const priceMid = `rgb(${mixChannel(214, tintRed, 0.55)}, ${mixChannel(226, tintGreen, 0.55)}, ${mixChannel(245, tintBlue, 0.55)})`;
-  const priceBottom = `rgb(${mixChannel(166, tintRed, 0.72)}, ${mixChannel(186, tintGreen, 0.72)}, ${mixChannel(218, tintBlue, 0.72)})`;
+  const priceTop = `rgb(${mixChannel(236, tintRed, 0.18)}, ${mixChannel(252, tintGreen, 0.18)}, ${mixChannel(247, tintBlue, 0.18)})`;
+  const priceMid = `rgb(${mixChannel(196, tintRed, 0.48)}, ${mixChannel(236, tintGreen, 0.48)}, ${mixChannel(226, tintBlue, 0.48)})`;
+  const priceBottom = `rgb(${mixChannel(128, tintRed, 0.7)}, ${mixChannel(206, tintGreen, 0.7)}, ${mixChannel(190, tintBlue, 0.7)})`;
 
   return {
     blurPx: Math.round(blurBase + blurRange * blurInfluence),
     saturation: Math.round(saturationBase + normalizedSaturation * saturationRange),
-    bgAlpha: Number((0.6 + normalizedSaturation * 0.1 + (1 - normalizedBrightness) * 0.08).toFixed(3)),
-    borderAlpha: Number((0.09 + normalizedSaturation * 0.07 + normalizedBrightness * 0.03).toFixed(3)),
+    bgAlpha: Number((0.32 + normalizedSaturation * 0.05 + (1 - normalizedBrightness) * 0.03).toFixed(3)),
+    borderAlpha: Number((0.05 + normalizedSaturation * 0.04 + normalizedBrightness * 0.015).toFixed(3)),
     tintRgb,
-    tintAlpha: Number((0.08 + normalizedSaturation * 0.2).toFixed(3)),
-    highlightAlpha: Number((0.12 + normalizedBrightness * 0.08).toFixed(3)),
-    shadowAlpha: Number((0.16 + normalizedSaturation * 0.16).toFixed(3)),
+    tintAlpha: Number((0.05 + normalizedSaturation * 0.12).toFixed(3)),
+    highlightAlpha: Number((0.08 + normalizedBrightness * 0.05).toFixed(3)),
+    shadowAlpha: Number((0.1 + normalizedSaturation * 0.1).toFixed(3)),
     priceGradient: {
       top: priceTop,
       mid: priceMid,

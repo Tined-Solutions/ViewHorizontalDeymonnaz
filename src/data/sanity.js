@@ -1,29 +1,29 @@
 (function () {
   const namespace = (window.InmoCatalogSource = window.InmoCatalogSource || {});
   const defaultTheme = {
-    primary: "#7dd3fc",
-    secondary: "#dbeafe",
-    tertiary: "#60a5fa",
-    glow: "#f8fafc",
+    primary: "#0a7a63",
+    secondary: "#064538",
+    tertiary: "#14b594",
+    glow: "#ccfff2",
   };
   const fallbackVisualThemePresets = {
     tema1: {
-      primary: "#04ebad",
-      secondary: "#ddd4c6",
-      tertiary: "#b9a78e",
-      glow: "#f3eee4",
+      primary: "#02251d",
+      secondary: "#064538",
+      tertiary: "#0a7a63",
+      glow: "#16c3a0",
     },
     tema2: {
-      primary: "#af740e",
-      secondary: "#92de10",
-      tertiary: "#cfcfcf",
-      glow: "#f7daac",
+      primary: "#054236",
+      secondary: "#0a6a55",
+      tertiary: "#10a986",
+      glow: "#5be7c8",
     },
     tema3: {
-      primary: "#00ffb7",
-      secondary: "#9f8b73",
-      tertiary: "#3f4548",
-      glow: "#d8cdbc",
+      primary: "#065143",
+      secondary: "#0f7c65",
+      tertiary: "#1cb892",
+      glow: "#b7fff3",
     },
   };
 
