@@ -780,6 +780,8 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
 
     return true;
   });
+  const primaryMetrics = metrics.slice(0, 3);
+  const secondaryDetails = details.slice(0, 2);
 
   const panelSlideReducedMotion = panelComponentReduceMotion;
   const panelEnterOffsetX = performanceMode ? -112 : -148;
@@ -894,15 +896,20 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
           : null,
         create(
           motion.div,
-          { className: "mt-3 grid grid-cols-1 items-start gap-2.5 transform-gpu will-change-[transform,opacity] xl:grid-cols-[minmax(0,1fr)_auto] xl:gap-3 2xl:gap-4", variants: sectionVariants, layout: "position" },
+          {
+            className:
+              "relative mt-3 grid gap-2.5 transform-gpu will-change-[transform,opacity] pr-[clamp(6.8rem,11vmin,14rem)] pb-[clamp(6.8rem,11vmin,14rem)] sm:pr-[clamp(7.6rem,10vmin,15rem)] sm:pb-[clamp(7.6rem,10vmin,15rem)] lg:pr-[clamp(8.8rem,10.5vmin,16rem)] lg:pb-[clamp(8.8rem,10.5vmin,16rem)]",
+            variants: sectionVariants,
+            layout: "position",
+          },
           create(
             motion.div,
-            { className: "grid min-w-0 gap-2.5 transform-gpu will-change-[transform,opacity] xl:col-start-1 xl:row-start-1 xl:gap-3 2xl:gap-4", variants: sectionVariants, layout: "position" },
-            metrics.length
+            { className: "grid min-w-0 gap-2.5 transform-gpu will-change-[transform,opacity]", variants: sectionVariants, layout: "position" },
+            primaryMetrics.length
               ? create(
                   motion.div,
-                  { className: "tv-metrics-grid transform-gpu will-change-[transform,opacity] flex flex-wrap items-start gap-2", layout: "position" },
-                  metrics.map((metric, index) =>
+                  { className: "tv-metrics-grid transform-gpu will-change-[transform,opacity] grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3", layout: "position" },
+                  primaryMetrics.map((metric, index) =>
                     create(MetricTile, {
                       metric,
                       index,
@@ -912,11 +919,11 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
                   )
                 )
               : null,
-            details.length
+            secondaryDetails.length
               ? create(
                   motion.div,
-                  { className: "tv-details-grid transform-gpu will-change-[transform,opacity] flex flex-wrap items-start gap-2", layout: "position" },
-                  details.map((detail, index) =>
+                  { className: "tv-details-grid transform-gpu will-change-[transform,opacity] grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-2", layout: "position" },
+                  secondaryDetails.map((detail, index) =>
                     create(DetailCard, {
                       detail,
                       index,
@@ -930,7 +937,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
               ? create(
                   motion.div,
                   {
-                    className: "tv-features-wrap transform-gpu will-change-[transform,opacity] flex flex-wrap items-start gap-2 xl:col-start-1 xl:row-start-2 xl:pt-0.5",
+                    className: "tv-features-wrap transform-gpu will-change-[transform,opacity] flex flex-wrap items-start gap-2 xl:pt-0.5",
                     variants: sectionVariants,
                     layout: "position",
                   },
@@ -948,7 +955,8 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
           create(
             motion.div,
             {
-              className: "tv-qr-slot transform-gpu will-change-[transform,opacity] grid justify-items-center gap-1 text-center xl:w-fit xl:justify-items-end xl:text-right xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:justify-self-end xl:self-start",
+              className:
+                "tv-qr-slot absolute right-[clamp(0.8rem,1.15vw,1.35rem)] bottom-[clamp(0.8rem,1.15vw,1.35rem)] z-[5] grid w-fit justify-items-end gap-1 text-right transform-gpu will-change-[transform,opacity]",
               variants: sectionVariants,
               layout: "position",
               layoutId: "panel-qr-slot",

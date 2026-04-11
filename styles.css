@@ -843,9 +843,8 @@ body {
 
 .tv-metrics-grid,
 .tv-details-grid {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  align-items: start;
 }
 
 .tv-metric,
