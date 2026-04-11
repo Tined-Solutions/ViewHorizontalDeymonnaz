@@ -8,6 +8,21 @@ import { buildQrParticleSeeds } from "../shared/qr.js";
 
 function AnimatedBlock({ as = "div", className, children, reduceMotion, delay = 0, y = 14, transition = {}, style = {}, ...rest }) {
   const MotionTag = motion[as] || motion.div;
+
+  if (reduceMotion) {
+    const { layout, layoutId, transition: motionTransition, initial, animate, exit, variants, ...domProps } = rest;
+
+    return create(
+      as,
+      {
+        className,
+        style,
+        ...domProps,
+      },
+      children
+    );
+  }
+
   const initialState = reduceMotion ? { opacity: 0 } : { opacity: 0, y };
   const animateState = reduceMotion
     ? { opacity: 1 }
@@ -39,6 +54,10 @@ function AnimatedBlock({ as = "div", className, children, reduceMotion, delay = 
 }
 
 function PanelAtmosphere({ reduceMotion, performanceMode, panelVisual }) {
+  if (reduceMotion || performanceMode) {
+    return null;
+  }
+
   const atmosphereRgb = panelVisual && typeof panelVisual.tintRgb === "string" ? panelVisual.tintRgb : `${DEFAULT_MEDIA_VISUAL.red}, ${DEFAULT_MEDIA_VISUAL.green}, ${DEFAULT_MEDIA_VISUAL.blue}`;
   const haloBaseAlpha = panelVisual && Number.isFinite(panelVisual.highlightAlpha) ? panelVisual.highlightAlpha : 0.14;
   const beamBaseAlpha = panelVisual && Number.isFinite(panelVisual.tintAlpha) ? panelVisual.tintAlpha : 0.1;
@@ -109,6 +128,15 @@ function PanelAtmosphere({ reduceMotion, performanceMode, panelVisual }) {
 function MetricTile({ metric, index, reduceMotion }) {
   if (!metric) {
     return null;
+  }
+
+  if (reduceMotion) {
+    return create(
+      "div",
+      { className: "tv-metric inline-flex w-auto max-w-full shrink-0 flex-col items-start self-start rounded-xl bg-white/[0.06] px-2.5 py-2 text-white/90" },
+      create("div", { className: "text-[0.95rem] font-semibold leading-tight text-white sm:text-base" }, metric.value || ""),
+      create("div", { className: "mt-1 text-[0.56rem] uppercase tracking-[0.18em] text-cyan-200/80" }, metric.label || "")
+    );
   }
 
   const appearDelay = reduceMotion ? 0 : proceduralDelay(index, 0.02, 0.009);
@@ -259,6 +287,19 @@ function FeaturePill({ feature, index, reduceMotion }) {
     return null;
   }
 
+  if (reduceMotion) {
+    return create(
+      "span",
+      {
+        className: "tv-feature-pill inline-flex h-9 w-9 items-center justify-center rounded-full bg-cyan-100/12 text-cyan-50 shadow-[0_6px_18px_rgba(0,0,0,0.2)]",
+        role: "img",
+        "aria-label": feature,
+        title: feature,
+      },
+      create("span", { className: "tv-service-icon inline-flex h-5 w-5 shrink-0 items-center justify-center text-cyan-100/95", "aria-hidden": true }, create(ServiceIcon, { feature }))
+    );
+  }
+
   const appearDelay = reduceMotion ? 0 : proceduralDelay(index, 0.015, 0.008);
 
   return create(
@@ -288,6 +329,15 @@ function FeaturePill({ feature, index, reduceMotion }) {
 function DetailCard({ detail, index, reduceMotion }) {
   if (!detail) {
     return null;
+  }
+
+  if (reduceMotion) {
+    return create(
+      "div",
+      { className: "tv-detail inline-flex w-auto max-w-full shrink-0 flex-col items-start self-start rounded-xl bg-white/[0.05] px-2.5 py-2" },
+      create("div", { className: "text-[0.54rem] uppercase tracking-[0.2em] text-cyan-200/80" }, detail.label || ""),
+      create("div", { className: "mt-1 text-[0.76rem] leading-tight text-white/90" }, detail.value || "")
+    );
   }
 
   const appearDelay = reduceMotion ? 0 : proceduralDelay(index, 0.018, 0.009);
@@ -326,6 +376,25 @@ function AnimatedQr({ qrUrl, propertyName, reduceMotion, performanceMode }) {
 
     return buildQrParticleSeeds(qrParticleCount);
   }, [reduceMotion, qrParticleCount]);
+
+  if (reduceMotion) {
+    return create(
+      "div",
+      {
+        className:
+          "tv-qr relative grid h-[82px] w-[82px] place-items-center overflow-hidden rounded-xl bg-white p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.3)] sm:h-[92px] sm:w-[92px] lg:h-[104px] lg:w-[104px] 2xl:h-[128px] 2xl:w-[128px]",
+      },
+      create("img", {
+        src: qrUrl,
+        alt: `Codigo QR para abrir ${propertyName}`,
+        className: "relative z-[1] block h-full w-full object-contain",
+        loading: "eager",
+        decoding: "async",
+        draggable: false,
+        referrerPolicy: "no-referrer",
+      })
+    );
+  }
 
   const frameVariants = reduceMotion
     ? {
@@ -529,10 +598,10 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
   }
 
   const panelReduceMotion = reduceMotion || performanceMode;
-  const panelComponentReduceMotion = reduceMotion;
+  const panelComponentReduceMotion = reduceMotion || performanceMode;
   const panelIntroBaseDelay = panelComponentReduceMotion ? 0 : 0.06;
   const panelClassName = performanceMode
-    ? "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-emerald-950/32 p-3 shadow-[0_10px_26px_rgba(0,0,0,0.2)] backdrop-blur-[2px] sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7"
+    ? "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-emerald-950/22 p-3 shadow-[0_8px_18px_rgba(0,0,0,0.16)] backdrop-blur-0 sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7"
     : "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-emerald-950/24 p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-[2px] sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7";
 
   const kickerValues = [property.type, property.badge]
@@ -593,14 +662,20 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
   const panelBorderAlphaMotion = useSpring(surfaceBorderAlpha, panelVisualSpring);
   const panelBackgroundMotion = useTransform(panelAlphaMotion, (value) => `rgba(4, 34, 27, ${value.toFixed(3)})`);
   const panelBorderMotion = useTransform(panelBorderAlphaMotion, (value) => `rgba(255, 255, 255, ${value.toFixed(3)})`);
-  const panelSurfaceStyle = {
-    backgroundColor: panelBackgroundMotion,
-    backgroundImage: `radial-gradient(circle at 14% 16%, rgba(${surfaceTintRgb}, ${surfaceHighlightAlpha}) 0%, rgba(${surfaceTintRgb}, ${surfaceTintAlpha}) 34%, rgba(2, 8, 20, 0) 72%), radial-gradient(circle at 84% 72%, rgba(${surfaceTintRgbSecondary}, ${Math.max(surfaceTintAlpha * 0.95, 0.07).toFixed(3)}) 0%, rgba(${surfaceTintRgbSecondary}, 0) 64%), linear-gradient(180deg, rgba(${surfaceTintRgbTertiary}, 0.12) 0%, rgba(2, 8, 20, 0) 45%)`,
-    borderColor: panelBorderMotion,
-    boxShadow: `0 14px 42px rgba(${surfaceTintRgb}, ${surfaceShadowAlpha}), 0 20px 54px rgba(0,0,0,0.24)`,
-    backdropFilter: `blur(${surfaceBlur}px) saturate(${surfaceSaturation}%)`,
-    WebkitBackdropFilter: `blur(${surfaceBlur}px) saturate(${surfaceSaturation}%)`,
-  };
+  const panelSurfaceStyle = panelReduceMotion
+    ? {
+        backgroundColor: `rgba(4, 34, 27, ${surfaceAlpha.toFixed(3)})`,
+        borderColor: `rgba(255, 255, 255, ${surfaceBorderAlpha.toFixed(3)})`,
+        boxShadow: `0 10px 24px rgba(0,0,0,0.18)`,
+      }
+    : {
+        backgroundColor: panelBackgroundMotion,
+        backgroundImage: `radial-gradient(circle at 14% 16%, rgba(${surfaceTintRgb}, ${surfaceHighlightAlpha}) 0%, rgba(${surfaceTintRgb}, ${surfaceTintAlpha}) 34%, rgba(2, 8, 20, 0) 72%), radial-gradient(circle at 84% 72%, rgba(${surfaceTintRgbSecondary}, ${Math.max(surfaceTintAlpha * 0.95, 0.07).toFixed(3)}) 0%, rgba(${surfaceTintRgbSecondary}, 0) 64%), linear-gradient(180deg, rgba(${surfaceTintRgbTertiary}, 0.12) 0%, rgba(2, 8, 20, 0) 45%)`,
+        borderColor: panelBorderMotion,
+        boxShadow: `0 14px 42px rgba(${surfaceTintRgb}, ${surfaceShadowAlpha}), 0 20px 54px rgba(0,0,0,0.24)`,
+        backdropFilter: `blur(${surfaceBlur}px) saturate(${surfaceSaturation}%)`,
+        WebkitBackdropFilter: `blur(${surfaceBlur}px) saturate(${surfaceSaturation}%)`,
+      };
   const panelAtmosphereVisual =
     themePrimaryRgb || themeSecondaryRgb || themeTertiaryRgb
       ? {
@@ -701,7 +776,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
     return true;
   });
 
-  const panelSlideReducedMotion = reduceMotion;
+  const panelSlideReducedMotion = panelComponentReduceMotion;
   const panelEnterOffsetX = performanceMode ? -112 : -148;
   const panelExitOffsetX = performanceMode ? 34 : 44;
   const panelEnterDuration = performanceMode ? 0.32 : 0.38;

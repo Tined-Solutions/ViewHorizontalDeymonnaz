@@ -33,11 +33,11 @@ export function buildPanelVisual(visual, performanceMode) {
   );
   const normalizedBrightness = clampNumber((safeVisual.brightness - 44) / 196, 0, 1);
   const normalizedSaturation = clampNumber(safeVisual.saturation, 0, 1);
-  const blurBase = performanceMode ? 4 : 5;
-  const blurRange = performanceMode ? 8 : 10;
+  const blurBase = performanceMode ? 0 : 5;
+  const blurRange = performanceMode ? 3 : 10;
   const blurInfluence = (1 - normalizedBrightness) * (0.48 + normalizedSaturation * 0.34);
-  const saturationBase = performanceMode ? 96 : 100;
-  const saturationRange = performanceMode ? 14 : 18;
+  const saturationBase = performanceMode ? 92 : 100;
+  const saturationRange = performanceMode ? 6 : 18;
   const tintWeight = 0.34 + normalizedSaturation * 0.38;
   const tintRed = mixChannel(18, safeVisual.red, tintWeight);
   const tintGreen = mixChannel(132, safeVisual.green, tintWeight);
@@ -64,7 +64,11 @@ export function buildPanelVisual(visual, performanceMode) {
   };
 }
 
-export function resolveImageVisual(src) {
+export function resolveImageVisual(src, options = {}) {
+  if (options.performanceMode) {
+    return Promise.resolve(DEFAULT_MEDIA_VISUAL);
+  }
+
   if (!src) {
     return Promise.resolve(DEFAULT_MEDIA_VISUAL);
   }

@@ -101,6 +101,8 @@ function App({ utils, catalogSource, sanityConfig }) {
     };
   }, [catalogSource, sanityConfig, utils]);
 
+  const performanceMode = sanityConfig.tvPerformanceMode !== false;
+
   if (catalog && isCatalogReady(catalog)) {
     const configuredDurationMs = Number(sanityConfig.defaultDurationMs);
     const configuredPanelDelayMs = Number(sanityConfig.panelRevealDelayMs);
@@ -111,13 +113,16 @@ function App({ utils, catalogSource, sanityConfig }) {
       utils,
       siteBaseUrl: catalog.siteBaseUrl || sanityConfig.publicBaseUrl || "",
       defaultDurationMs: Number.isFinite(configuredDurationMs) && configuredDurationMs > 0 ? configuredDurationMs : 20000,
-      performanceMode: sanityConfig.tvPerformanceMode !== false,
+      performanceMode,
       panelRevealDelayMs: Number.isFinite(configuredPanelDelayMs) && configuredPanelDelayMs >= 0 ? configuredPanelDelayMs : 1000,
       dynamicPanelBlur: sanityConfig.panelDynamicBlur !== false,
     });
   }
 
-  return create(StatusScreen, screen);
+  return create(StatusScreen, {
+    ...screen,
+    performanceMode,
+  });
 }
 
 function startApp() {
@@ -128,6 +133,7 @@ function startApp() {
   const utils = window.InmoUtils;
   const catalogSource = window.InmoCatalogSource;
   const sanityConfig = window.InmoSanityConfig || {};
+  const performanceMode = sanityConfig.tvPerformanceMode !== false;
 
   if (!utils || !catalogSource) {
     const root = createRoot(rootElement);
@@ -137,6 +143,7 @@ function startApp() {
         title: "Faltan los scripts base",
         description: "No se encontro la capa de utilidades o el cargador de contenido.",
         details: "Verifica que src/utils/format.js y src/data/sanity.js se carguen antes del modulo principal.",
+        performanceMode,
       })
     );
 

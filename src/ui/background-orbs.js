@@ -1,6 +1,10 @@
 import { create, fragment, motion } from "../runtime/react-motion.js";
 
-export function BackgroundOrbs({ reduceMotion }) {
+export function BackgroundOrbs({ reduceMotion, performanceMode = false }) {
+  if (performanceMode) {
+    return null;
+  }
+
   const primaryAnimate = reduceMotion
     ? { opacity: 0.5 }
     : { x: [0, 20, -12, 0], y: [0, -16, 8, 0], scale: [1, 1.08, 1.02, 1], opacity: [0.55, 0.9, 0.55] };
@@ -19,7 +23,7 @@ export function BackgroundOrbs({ reduceMotion }) {
     fragment,
     null,
     create(motion.div, {
-      className: "stage-shell-orb stage-shell-orb--primary",
+      className: "stage-shell-orb stage-shell-orb--primary", 
       "aria-hidden": true,
       animate: primaryAnimate,
       transition: primaryTransition,

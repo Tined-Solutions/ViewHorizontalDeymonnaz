@@ -25,8 +25,8 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
   const [propertyIndex, setPropertyIndex] = React.useState(() => resolveInitialPropertyIndex(catalog));
   const [mediaIndex, setMediaIndex] = React.useState(0);
   const [mediaDurationMs, setMediaDurationMs] = React.useState(() => resolveMediaDurationMs(null, defaultDurationMs));
-  const [panelDelayDone, setPanelDelayDone] = React.useState(() => Boolean(reduceMotion));
-  const [qrReady, setQrReady] = React.useState(() => Boolean(reduceMotion));
+  const [panelDelayDone, setPanelDelayDone] = React.useState(() => Boolean(reduceMotion || performanceMode));
+  const [qrReady, setQrReady] = React.useState(() => Boolean(reduceMotion || performanceMode));
   const [panelVisual, setPanelVisual] = React.useState(() => buildPanelVisual(DEFAULT_MEDIA_VISUAL, performanceMode));
 
   const property = properties[propertyIndex] || null;
@@ -34,7 +34,7 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
   const activeTheme = visualTheme || (property && property.theme) || null;
   const mediaPerspective = performanceMode ? "1650px" : "1450px";
   const qrUrl = property ? buildQrUrl(property, siteBaseUrl) : "";
-  const panelVisible = Boolean(property) && panelDelayDone && (reduceMotion || qrReady);
+  const panelVisible = Boolean(property) && panelDelayDone && (reduceMotion || performanceMode || qrReady);
 
   React.useEffect(() => {
     setMediaDurationMs(resolveMediaDurationMs(media, defaultDurationMs));
@@ -53,7 +53,7 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
 
     const defaultVisual = buildPanelVisual(DEFAULT_MEDIA_VISUAL, performanceMode);
 
-    if (!dynamicPanelBlur) {
+    if (performanceMode || !dynamicPanelBlur) {
       setPanelVisual(defaultVisual);
       return () => {
         active = false;
@@ -73,7 +73,7 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
       };
     }
 
-    resolveImageVisual(sampleSource).then((visual) => {
+    resolveImageVisual(sampleSource, { performanceMode }).then((visual) => {
       if (!active) {
         return;
       }
@@ -89,6 +89,11 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
   React.useEffect(() => {
     if (!property) {
       setPanelDelayDone(false);
+      return undefined;
+    }
+
+    if (performanceMode) {
+      setPanelDelayDone(true);
       return undefined;
     }
 
@@ -119,6 +124,13 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
 
     if (!property || !qrUrl) {
       setQrReady(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    if (performanceMode) {
+      setQrReady(true);
       return () => {
         active = false;
       };
@@ -165,6 +177,10 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
       return;
     }
 
+    if (performanceMode) {
+      return;
+    }
+
     const currentMedia = property.media[mediaIndex] || property.media[0];
     const nextMedia = property.media[(mediaIndex + 1) % property.media.length];
     const nextProperty = properties[(propertyIndex + 1) % properties.length];
@@ -175,7 +191,7 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
     if (nextProperty && Array.isArray(nextProperty.media) && nextProperty.media.length > 0) {
       utils.preloadMedia(nextProperty.media[0]);
     }
-  }, [mediaIndex, propertyIndex, property, properties.length, utils]);
+  }, [mediaIndex, performanceMode, propertyIndex, property, properties.length, utils]);
 
   React.useEffect(() => {
     if (!property || !media) {

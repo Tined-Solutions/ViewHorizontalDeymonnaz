@@ -1472,9 +1472,7 @@ body {
 }
 
 html.tv-performance-mode body::before {
-  animation: none;
-  filter: blur(42px) saturate(100%);
-  opacity: 0.42;
+  display: none;
 }
 
 html.tv-performance-mode body::after,
@@ -1483,8 +1481,71 @@ html.tv-performance-mode .stage-frame::after {
   display: none;
 }
 
+html.tv-performance-mode .experience-shell::before,
+html.tv-performance-mode .stage-shell-orb,
+html.tv-performance-mode .media-stage__glow,
+html.tv-performance-mode .pulse-dot {
+  display: none !important;
+  animation: none !important;
+}
+
+html.tv-performance-mode .stage-frame::before {
+  display: none !important;
+}
+
+html.tv-performance-mode .floating-card,
+html.tv-performance-mode .stage-frame,
+html.tv-performance-mode .media-stage-shell,
+html.tv-performance-mode .tv-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2) !important;
+}
+
+html.tv-performance-mode .stage-frame,
 html.tv-performance-mode .media-stage-shell {
-  backdrop-filter: blur(16px) saturate(106%);
+  background-image: none !important;
+}
+
+html.tv-performance-mode .media-stage__item {
+  will-change: auto !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+html.tv-performance-mode .media-stage__item img,
+html.tv-performance-mode .media-stage__item video {
+  image-rendering: auto;
+}
+
+html.tv-performance-mode .tv-qr,
+html.tv-performance-mode .tv-metric,
+html.tv-performance-mode .tv-feature-pill,
+html.tv-performance-mode .tv-detail,
+html.tv-performance-mode .control-button,
+html.tv-performance-mode .status-pill,
+html.tv-performance-mode .time-pill,
+html.tv-performance-mode .section-kicker,
+html.tv-performance-mode .tv-title,
+html.tv-performance-mode .tv-location,
+html.tv-performance-mode .tv-summary,
+html.tv-performance-mode .tv-price {
+  animation: none !important;
+  transition: none !important;
+}
+
+html.tv-performance-mode .tv-qr * {
+  animation: none !important;
+  transition: none !important;
+}
+
+html.tv-performance-mode .tv-panel {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16) !important;
+}
+
+html.tv-performance-mode .media-stage__overlay {
+  opacity: 0.76;
 }
 
 /* Profile tuned for vertical 2160x3840 displays while preserving default responsive behavior. */

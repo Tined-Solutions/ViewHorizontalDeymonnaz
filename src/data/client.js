@@ -11,6 +11,7 @@ export function createClientInstance(config) {
       projectId: toText(config.projectId),
       dataset: toText(config.dataset),
       apiVersion: toText(config.apiVersion) || "2026-04-02",
+      timeout: Number.isFinite(Number(config.timeoutMs)) && Number(config.timeoutMs) > 0 ? Number(config.timeoutMs) : 8000,
       useCdn: config.useCdn !== false,
       perspective: config.perspective || "published",
     });

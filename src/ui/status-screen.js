@@ -2,8 +2,8 @@ import { React, create, motion, useReducedMotion } from "../runtime/react-motion
 import { baseTitle } from "../constants/ui.js";
 import { BackgroundOrbs } from "./background-orbs.js";
 
-export function StatusScreen({ title, description, details }) {
-  const reduceMotion = Boolean(useReducedMotion());
+export function StatusScreen({ title, description, details, performanceMode = false }) {
+  const reduceMotion = Boolean(useReducedMotion()) || performanceMode;
 
   React.useEffect(() => {
     document.title = title || baseTitle;
@@ -12,7 +12,7 @@ export function StatusScreen({ title, description, details }) {
   return create(
     "div",
     { className: "experience-shell" },
-    create(BackgroundOrbs, { reduceMotion }),
+    performanceMode ? null : create(BackgroundOrbs, { reduceMotion }),
     create(
       "div",
       { className: "stage-frame flex h-full w-full items-center justify-center p-6" },

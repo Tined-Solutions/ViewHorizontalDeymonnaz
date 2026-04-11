@@ -347,19 +347,24 @@
     try {
       const url = new URL(safeSrc);
       const format = toText(config.imageFormat || "webp").toLowerCase();
+      const performanceMode = config.tvPerformanceMode !== false;
 
       if (format === "webp") {
         url.searchParams.set("fm", "webp");
       }
 
-      const quality = clampNumber(toPositiveInteger(config.imageQuality, 72), 45, 90);
-      const maxWidth = clampNumber(toPositiveInteger(config.imageMaxWidth, 2160), 640, 4096);
-      const maxHeight = clampNumber(toPositiveInteger(config.imageMaxHeight, 3840), 640, 4096);
+      const quality = performanceMode ? clampNumber(Math.min(toPositiveInteger(config.imageQuality, 68), 66), 45, 72) : clampNumber(toPositiveInteger(config.imageQuality, 72), 45, 90);
+      const maxWidth = performanceMode ? clampNumber(Math.min(toPositiveInteger(config.imageMaxWidth, 1920), 1600), 640, 1920) : clampNumber(toPositiveInteger(config.imageMaxWidth, 2160), 640, 4096);
+      const maxHeight = performanceMode ? clampNumber(Math.min(toPositiveInteger(config.imageMaxHeight, 3200), 2880), 640, 3200) : clampNumber(toPositiveInteger(config.imageMaxHeight, 3840), 640, 4096);
 
       url.searchParams.set("fit", "max");
       url.searchParams.set("q", String(quality));
       url.searchParams.set("w", String(maxWidth));
       url.searchParams.set("h", String(maxHeight));
+
+      if (performanceMode) {
+        url.searchParams.set("dpr", "1");
+      }
 
       return url.toString();
     } catch {
@@ -1405,6 +1410,7 @@
       projectId: toText(config.projectId),
       dataset: toText(config.dataset),
       apiVersion: toText(config.apiVersion) || "2026-04-02",
+      timeout: Number.isFinite(Number(config.timeoutMs)) && Number(config.timeoutMs) > 0 ? Number(config.timeoutMs) : 8000,
       useCdn: config.useCdn !== false,
       perspective: config.perspective || "published",
     });

@@ -45,6 +45,79 @@ export function MediaStage({ property, media, reduceMotion, performanceMode, onM
     };
   }, [isHlsSource, isVideo, mediaSrc, shouldAttachHls]);
 
+  if (performanceMode) {
+    if (!media) {
+      return create(
+        "div",
+        {
+          className: "media-stage__item",
+        },
+        create(
+          "div",
+          {
+            className:
+              "flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(0,0,0,0.35))] p-8 text-center",
+          },
+          create("div", null, create("p", { className: "text-[10px] uppercase tracking-[0.4em] text-white/45" }, "Media no disponible"), create("p", { className: "mt-3 text-xl font-semibold text-white" }, property ? property.name : "Sin contenido"))
+        )
+      );
+    }
+
+    return create(
+      "div",
+      {
+        key: mediaSrc,
+        className: "media-stage__item",
+        style: { willChange: "auto" },
+      },
+      media.type === "video"
+        ? create("video", {
+            src: shouldAttachHls ? undefined : mediaSrc,
+            poster: media.poster || "",
+            autoPlay: true,
+            muted: true,
+            loop: false,
+            playsInline: true,
+            preload: "metadata",
+            "aria-label": media.caption ? `${property.name} - ${media.caption}` : property.name,
+            ref: videoRef,
+            onLoadedMetadata: (event) => {
+              if (typeof onMediaDurationChange !== "function") {
+                return;
+              }
+
+              const durationSeconds = Number(event.currentTarget && event.currentTarget.duration);
+
+              if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
+                onMediaDurationChange(Math.round(durationSeconds * 1000));
+              }
+            },
+            onDurationChange: (event) => {
+              if (typeof onMediaDurationChange !== "function") {
+                return;
+              }
+
+              const durationSeconds = Number(event.currentTarget && event.currentTarget.duration);
+
+              if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
+                onMediaDurationChange(Math.round(durationSeconds * 1000));
+              }
+            },
+            style: { backfaceVisibility: "hidden" },
+          })
+        : create("img", {
+            src: media.src,
+            alt: media.caption ? `${property.name} - ${media.caption}` : property.name,
+            loading: "eager",
+            decoding: "async",
+            fetchPriority: "high",
+            draggable: false,
+            referrerPolicy: "no-referrer",
+            style: { backfaceVisibility: "hidden", transform: "translateZ(0)" },
+          })
+    );
+  }
+
   const mediaVariants = reduceMotion
     ? {
         hidden: { opacity: 0 },
