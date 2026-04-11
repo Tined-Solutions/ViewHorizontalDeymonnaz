@@ -631,8 +631,6 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
   const resolvedQrUrl = qrUrl || buildQrUrl(property, siteBaseUrl);
   const surfaceBlur = panelVisual && Number.isFinite(panelVisual.blurPx) ? panelVisual.blurPx : 8;
   const surfaceSaturation = panelVisual && Number.isFinite(panelVisual.saturation) ? panelVisual.saturation : 104;
-  const surfaceAlpha = panelVisual && Number.isFinite(panelVisual.bgAlpha) ? panelVisual.bgAlpha : 0.38;
-  const surfaceBorderAlpha = panelVisual && Number.isFinite(panelVisual.borderAlpha) ? panelVisual.borderAlpha : 0.08;
   const themePrimaryRgb = activeTheme ? hexToRgbString(activeTheme.primary, "") : "";
   const themeSecondaryRgb = activeTheme ? hexToRgbString(activeTheme.secondary, "") : "";
   const themeTertiaryRgb = activeTheme ? hexToRgbString(activeTheme.tertiary, "") : "";
@@ -971,5 +969,5 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
         )
       )
     )
-  );
+  ));
 }

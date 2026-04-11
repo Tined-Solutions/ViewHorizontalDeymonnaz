@@ -1,7 +1,7 @@
 import { React, createRoot, LazyMotion, MotionConfig, create, domAnimation } from "./runtime/react-motion.js";
-import { CatalogExperience } from "./features/catalog-experience.js";
-import { StatusScreen } from "./ui/status-screen.js";
-import { catalogSignature, isCatalogReady } from "./shared/catalog.js";
+import { CatalogExperience } from "./features/catalog-experience.js?v=20260411-03";
+import { StatusScreen } from "./ui/status-screen.js?v=20260411-03";
+import { catalogSignature, isCatalogReady } from "./shared/catalog.js?v=20260411-03";
 
 const rootElement = document.getElementById("app");
 

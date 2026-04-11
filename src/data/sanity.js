@@ -346,11 +346,18 @@
 
     try {
       const url = new URL(safeSrc);
-      const format = toText(config.imageFormat || "webp").toLowerCase();
+      const format = toText(config.imageFormat || "auto").toLowerCase();
       const performanceMode = config.tvPerformanceMode !== false;
 
-      if (format === "webp") {
-        url.searchParams.set("fm", "webp");
+      if (format === "original" || format === "none") {
+        url.searchParams.delete("auto");
+        url.searchParams.delete("fm");
+      } else if (format === "webp" || format === "auto" || format === "format") {
+        url.searchParams.delete("fm");
+        url.searchParams.set("auto", "format");
+      } else {
+        url.searchParams.delete("auto");
+        url.searchParams.set("fm", format);
       }
 
       const quality = performanceMode ? clampNumber(Math.min(toPositiveInteger(config.imageQuality, 68), 66), 45, 72) : clampNumber(toPositiveInteger(config.imageQuality, 72), 45, 90);

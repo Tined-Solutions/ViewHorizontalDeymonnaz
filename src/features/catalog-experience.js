@@ -1,11 +1,11 @@
 import { React, create, motion, useReducedMotion } from "../runtime/react-motion.js";
 import { baseTitle, deymonnazLogoSrc } from "../constants/ui.js";
-import { buildQrUrl, resolveInitialPropertyIndex } from "../shared/catalog.js";
-import { DEFAULT_MEDIA_VISUAL, buildPanelVisual, resolveImageVisual } from "../shared/media-visual.js";
-import { hasQrImageCached, preloadQrImage } from "../shared/qr.js";
-import { BackgroundOrbs } from "../ui/background-orbs.js";
-import { MediaStage } from "../ui/media-stage.js";
-import { PropertyPanel } from "../ui/property-panel.js";
+import { buildQrUrl, resolveInitialPropertyIndex } from "../shared/catalog.js?v=20260411-03";
+import { DEFAULT_MEDIA_VISUAL, buildPanelVisual, resolveImageVisual } from "../shared/media-visual.js?v=20260411-03";
+import { hasQrImageCached, preloadQrImage } from "../shared/qr.js?v=20260411-03";
+import { BackgroundOrbs } from "../ui/background-orbs.js?v=20260411-03";
+import { MediaStage } from "../ui/media-stage.js?v=20260411-03";
+import { PropertyPanel } from "../ui/property-panel.js?v=20260411-03";
 
 function resolveMediaDurationMs(media, fallbackDurationMs) {
   const explicitDurationMs = Number(media && media.duration);

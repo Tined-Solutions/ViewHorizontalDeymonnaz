@@ -8,7 +8,7 @@ window.InmoSanityConfig = {
 	panelRevealDelayMs: 1000,
 	tvPerformanceMode: true,
 	panelDynamicBlur: true,
-	imageFormat: "webp",
+	imageFormat: "auto",
 	imageQuality: 68,
 	imageMaxWidth: 1920,
 	imageMaxHeight: 3200,
