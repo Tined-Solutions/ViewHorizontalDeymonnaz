@@ -1199,7 +1199,23 @@
       return null;
     }
 
-    const mediaType = inferMediaType(item.type ?? item.mediaType ?? item.kind ?? item._type, src);
+    const mimeType = toText(
+      pickField(item, [
+        "mimeType",
+        "asset.mimeType",
+        "image.asset.mimeType",
+        "video.asset.mimeType",
+        "file.asset.mimeType",
+      ])
+    ).toLowerCase();
+    let mediaType = inferMediaType(item.type ?? item.mediaType ?? item.kind ?? item._type, src);
+
+    if (mimeType.startsWith("video/")) {
+      mediaType = "video";
+    } else if (mimeType.startsWith("image/")) {
+      mediaType = "image";
+    }
+
     const optimizedSrc = mediaType === "image" ? optimizeImageUrl(src, config) : src;
     const posterSrc = safeUrl(item.poster ?? item.posterUrl ?? item.poster_image ?? item.posterImage?.asset?.url ?? item.image?.asset?.url);
     const durationSeconds = Number(
@@ -1563,6 +1579,7 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
+        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       },
       video{
@@ -1573,6 +1590,7 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
+        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       },
       videos{
@@ -1583,6 +1601,7 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
+        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       },
       media[]{
@@ -1593,6 +1612,7 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
+        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       },
       fotos[]{
@@ -1603,6 +1623,7 @@
         "poster": asset->url,
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
+        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       }
     }`;

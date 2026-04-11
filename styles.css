@@ -1635,8 +1635,10 @@ html.tv-performance-mode .media-stage__overlay {
   }
 
   .tv-qr-slot {
+    width: fit-content !important;
     align-self: start !important;
     justify-self: end !important;
+    text-align: right !important;
   }
 
   .tv-qr {

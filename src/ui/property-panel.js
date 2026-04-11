@@ -947,7 +947,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
           create(
             motion.div,
             {
-              className: "tv-qr-slot transform-gpu will-change-[transform,opacity] grid justify-items-center gap-1 text-center xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:justify-self-end xl:self-start",
+              className: "tv-qr-slot transform-gpu will-change-[transform,opacity] grid justify-items-center gap-1 text-center xl:w-fit xl:justify-items-end xl:text-right xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:justify-self-end xl:self-start",
               variants: sectionVariants,
               layout: "position",
               layoutId: "panel-qr-slot",
