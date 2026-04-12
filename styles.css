@@ -1330,12 +1330,10 @@ body {
 
   body {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100dvh;
-    height: 100dvw;
-    transform-origin: top left;
-    transform: translateY(100dvh) rotate(-90deg);
+    inset: 0;
+    width: 100dvw;
+    height: 100dvh;
+    transform: none;
   }
 
   body::before,
@@ -1352,10 +1350,12 @@ body {
   }
 
   .stage-frame {
+    --horizontal-panel-width: clamp(300px, 32vw, 520px);
+    --horizontal-panel-gap: clamp(0.38rem, 0.82vw, 0.7rem);
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) var(--horizontal-panel-width);
     grid-template-rows: 1fr;
-    gap: 0;
+    gap: var(--horizontal-panel-gap);
     padding: clamp(0.34rem, 0.58vw, 0.48rem);
   }
 
@@ -1367,6 +1367,8 @@ body {
   .media-stage-shell {
     position: relative;
     inset: auto;
+    grid-column: 1;
+    grid-row: 1;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
@@ -1399,16 +1401,18 @@ body {
   }
 
   .property-panel {
-    position: absolute;
-    left: clamp(0.42rem, 0.85vw, 0.72rem);
-    right: clamp(0.42rem, 0.85vw, 0.72rem);
-    bottom: clamp(0.42rem, 0.85vw, 0.72rem);
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
     top: auto;
     transform: none;
-    width: auto;
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
     max-width: none;
-    max-height: min(42vh, 380px);
-    height: auto;
+    max-height: none;
+    height: 100%;
     min-height: 0;
     overflow: hidden;
     align-self: stretch;
@@ -1428,11 +1432,13 @@ body {
   }
 
   .property-panel__head {
+    grid-template-columns: 1fr;
     gap: clamp(0.3rem, 0.68vw, 0.58rem);
   }
 
   .property-panel__price-wrap {
-    align-items: center;
+    align-items: flex-start;
+    justify-content: flex-start;
   }
 
   .property-panel__price-copy {
@@ -1455,12 +1461,24 @@ body {
   }
 
   .property-panel__qr {
-    width: clamp(66px, 4.6vw, 88px);
+    width: clamp(66px, 7.2vw, 92px);
   }
 
   .property-panel__body {
-    grid-template-columns: clamp(66px, 4.6vw, 88px) minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "content"
+      "qr";
     gap: clamp(0.3rem, 0.6vw, 0.48rem);
+  }
+
+  .property-panel__qr-column,
+  .property-panel__qr-stack {
+    justify-items: start;
+  }
+
+  .property-panel__qr-caption {
+    text-align: left;
   }
 
   .property-panel__metrics {
@@ -1487,13 +1505,13 @@ body {
 
 @media (orientation: landscape) and (max-height: 720px) {
   .stage-frame {
-    gap: 0;
+    --horizontal-panel-width: clamp(280px, 34vw, 420px);
+    gap: 0.32rem;
     padding: 0.28rem;
   }
 
   .property-panel {
     padding: 0.46rem 0.52rem;
-    max-height: min(38vh, 320px);
     overflow: hidden;
   }
 
@@ -1501,16 +1519,11 @@ body {
     font-size: clamp(0.9rem, 1.6vw, 1.8rem);
   }
 
-  .property-panel__head {
-    grid-template-columns: 1fr;
-  }
-
-  .property-panel__price-wrap {
-    justify-content: flex-start;
-  }
-
   .property-panel__body {
-    grid-template-columns: clamp(72px, 5.6vw, 92px) minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "content"
+      "qr";
   }
 
   .property-panel__summary {
@@ -1767,5 +1780,36 @@ html.tv-performance-mode .media-stage__overlay {
   .stage-frame,
   .media-stage-shell {
     border: none !important;
+  }
+}
+
+@media (orientation: landscape) {
+  .tv-panel {
+    position: relative !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    align-self: stretch !important;
+    justify-self: stretch !important;
+  }
+
+  .media-stage-shell {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 3400px) and (min-height: 2000px) {
+  .tv-panel {
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    max-height: none !important;
   }
 }
