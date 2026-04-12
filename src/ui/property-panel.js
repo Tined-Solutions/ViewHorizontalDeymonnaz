@@ -3,7 +3,6 @@ import { clampNumber } from "../shared/math.js";
 import { hexToRgbString } from "../shared/color.js";
 import { normalizeComparableText, summaryIsRedundant, proceduralDelay } from "../shared/text.js";
 import { buildQrUrl } from "../shared/catalog.js";
-import { DEFAULT_MEDIA_VISUAL } from "../shared/media-visual.js";
 import { buildQrParticleSeeds } from "../shared/qr.js";
 
 function AnimatedBlock({ as = "div", className, children, reduceMotion, delay = 0, y = 14, transition = {}, style = {}, ...rest }) {
@@ -54,12 +53,14 @@ function AnimatedBlock({ as = "div", className, children, reduceMotion, delay = 
   );
 }
 
-function PanelAtmosphere({ reduceMotion, performanceMode, panelVisual }) {
+function PanelAtmosphere({ reduceMotion, performanceMode, panelVisual, activeTheme }) {
   if (reduceMotion || performanceMode) {
     return null;
   }
 
-  const atmosphereRgb = panelVisual && typeof panelVisual.tintRgb === "string" ? panelVisual.tintRgb : `${DEFAULT_MEDIA_VISUAL.red}, ${DEFAULT_MEDIA_VISUAL.green}, ${DEFAULT_MEDIA_VISUAL.blue}`;
+  const atmosphereRgb = activeTheme
+    ? hexToRgbString(activeTheme.secondary || activeTheme.primary || activeTheme.tertiary, "")
+    : "var(--accent-2-rgb)";
   const haloBaseAlpha = panelVisual && Number.isFinite(panelVisual.highlightAlpha) ? panelVisual.highlightAlpha : 0.14;
   const beamBaseAlpha = panelVisual && Number.isFinite(panelVisual.tintAlpha) ? panelVisual.tintAlpha : 0.1;
   const haloInnerAlpha = clampNumber(haloBaseAlpha * 1.45, 0.1, 0.36);
@@ -602,8 +603,8 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
   const panelComponentReduceMotion = reduceMotion || performanceMode;
   const panelIntroBaseDelay = panelComponentReduceMotion ? 0 : 0.06;
   const panelClassName = performanceMode
-    ? "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-emerald-950/22 p-3 shadow-[0_8px_18px_rgba(0,0,0,0.16)] backdrop-blur-0 sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7"
-    : "tv-panel absolute inset-x-2 bottom-2 z-40 overflow-hidden rounded-2xl bg-emerald-950/24 p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-[2px] sm:inset-x-3 sm:bottom-3 sm:p-4 lg:inset-x-5 lg:bottom-4 lg:p-5 xl:inset-x-6 xl:bottom-5 xl:p-6 2xl:inset-x-8 2xl:bottom-7 2xl:p-7";
+    ? "tv-panel absolute inset-x-0 bottom-0 z-40 overflow-hidden rounded-2xl bg-transparent px-3 pt-3 pb-0.5 shadow-[0_8px_18px_rgba(0,0,0,0.16)] backdrop-blur-[4px] sm:px-4 sm:pt-4 sm:pb-0.5 lg:px-5 lg:pt-5 lg:pb-1 xl:px-6 xl:pt-6 xl:pb-1.5 2xl:px-7 2xl:pt-7 2xl:pb-2"
+    : "tv-panel absolute inset-x-0 bottom-0 z-40 overflow-hidden rounded-2xl bg-transparent px-3 pt-3 pb-0.5 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-[2px] sm:px-4 sm:pt-4 sm:pb-0.5 lg:px-5 lg:pt-5 lg:pb-1 xl:px-6 xl:pt-6 xl:pb-1.5 2xl:px-7 2xl:pt-7 2xl:pb-2";
 
   const kickerValues = [property.type, property.badge]
     .map((value) => String(value ?? "").trim())
@@ -634,26 +635,26 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
   const themePrimaryRgb = activeTheme ? hexToRgbString(activeTheme.primary, "") : "";
   const themeSecondaryRgb = activeTheme ? hexToRgbString(activeTheme.secondary, "") : "";
   const themeTertiaryRgb = activeTheme ? hexToRgbString(activeTheme.tertiary, "") : "";
-  const surfaceTintRgb =
-    themePrimaryRgb || (panelVisual && typeof panelVisual.tintRgb === "string" ? panelVisual.tintRgb : `${DEFAULT_MEDIA_VISUAL.red}, ${DEFAULT_MEDIA_VISUAL.green}, ${DEFAULT_MEDIA_VISUAL.blue}`);
+  const surfaceTintRgb = themePrimaryRgb || themeSecondaryRgb || themeTertiaryRgb || "var(--accent-1-rgb)";
   const surfaceTintRgbSecondary = themeSecondaryRgb || surfaceTintRgb;
   const surfaceTintRgbTertiary = themeTertiaryRgb || surfaceTintRgb;
   const surfaceTintAlpha = panelVisual && Number.isFinite(panelVisual.tintAlpha) ? panelVisual.tintAlpha : 0.14;
   const surfaceHighlightAlpha = panelVisual && Number.isFinite(panelVisual.highlightAlpha) ? panelVisual.highlightAlpha : 0.18;
   const surfaceShadowAlpha = panelVisual && Number.isFinite(panelVisual.shadowAlpha) ? panelVisual.shadowAlpha : 0.22;
-  const minimumSurfaceAlpha = performanceMode ? 0.5 : 0.44;
+  const minimumSurfaceAlpha = performanceMode ? 0.69 : 0.66;
   const minimumBorderAlpha = performanceMode ? 0.12 : 0.1;
-  const normalizedSurfaceAlpha = panelVisual && Number.isFinite(panelVisual.bgAlpha) ? panelVisual.bgAlpha : 0.38;
+  const normalizedSurfaceAlpha = panelVisual && Number.isFinite(panelVisual.bgAlpha) ? panelVisual.bgAlpha : 0.64;
   const normalizedSurfaceBorderAlpha = panelVisual && Number.isFinite(panelVisual.borderAlpha) ? panelVisual.borderAlpha : 0.08;
   const surfaceAlpha = Math.max(normalizedSurfaceAlpha, minimumSurfaceAlpha);
   const surfaceBorderAlpha = Math.max(normalizedSurfaceBorderAlpha, minimumBorderAlpha);
-  const priceGradient = panelVisual && panelVisual.priceGradient ? panelVisual.priceGradient : null;
-  const priceStyle = priceGradient
+  const priceStyle = themePrimaryRgb || themeSecondaryRgb || themeTertiaryRgb
     ? {
-        "--tv-price-top": priceGradient.top,
-        "--tv-price-mid": priceGradient.mid,
-        "--tv-price-bottom": priceGradient.bottom,
+        "--tv-price-top": activeTheme && activeTheme.glow ? activeTheme.glow : "var(--accent-4)",
+        "--tv-price-mid": activeTheme && activeTheme.secondary ? activeTheme.secondary : "var(--accent-2)",
+        "--tv-price-bottom": activeTheme && activeTheme.primary ? activeTheme.primary : "var(--accent-1)",
         "--tv-price-accent-rgb": surfaceTintRgb,
+        "--tv-price-mid-rgb": surfaceTintRgbSecondary,
+        "--tv-price-bottom-rgb": surfaceTintRgbTertiary,
         "--tv-price-accent-alpha": clampNumber(surfaceTintAlpha * 1.18, 0.14, 0.42),
         "--tv-price-border-alpha": clampNumber(surfaceHighlightAlpha * 1.08, 0.16, 0.42),
       }
@@ -665,12 +666,12 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
       : { stiffness: 150, damping: 24, mass: 0.8 };
   const panelAlphaMotion = useSpring(surfaceAlpha, panelVisualSpring);
   const panelBorderAlphaMotion = useSpring(surfaceBorderAlpha, panelVisualSpring);
-  const panelBackgroundMotion = useTransform(panelAlphaMotion, (value) => `rgba(4, 34, 27, ${value.toFixed(3)})`);
-  const panelBorderMotion = useTransform(panelBorderAlphaMotion, (value) => `rgba(255, 255, 255, ${value.toFixed(3)})`);
+  const panelBackgroundMotion = useTransform(panelAlphaMotion, (value) => `rgba(${surfaceTintRgb}, ${value.toFixed(3)})`);
+  const panelBorderMotion = useTransform(panelBorderAlphaMotion, (value) => `rgba(${surfaceTintRgbSecondary}, ${value.toFixed(3)})`);
   const panelSurfaceStyle = panelReduceMotion
     ? {
-        backgroundColor: `rgba(4, 34, 27, ${surfaceAlpha.toFixed(3)})`,
-        borderColor: `rgba(255, 255, 255, ${surfaceBorderAlpha.toFixed(3)})`,
+        backgroundColor: `rgba(${surfaceTintRgb}, ${surfaceAlpha.toFixed(3)})`,
+        borderColor: `rgba(${surfaceTintRgbSecondary}, ${surfaceBorderAlpha.toFixed(3)})`,
         boxShadow: `0 10px 24px rgba(0,0,0,0.22)`,
       }
     : {
@@ -681,14 +682,6 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
         backdropFilter: `blur(${surfaceBlur}px) saturate(${surfaceSaturation}%)`,
         WebkitBackdropFilter: `blur(${surfaceBlur}px) saturate(${surfaceSaturation}%)`,
       };
-  const panelAtmosphereVisual =
-    themePrimaryRgb || themeSecondaryRgb || themeTertiaryRgb
-      ? {
-          ...(panelVisual && typeof panelVisual === "object" ? panelVisual : {}),
-          tintRgb: surfaceTintRgb,
-        }
-      : panelVisual;
-
   const occupiedValues = new Set(
     [titleText, locationText, ...kickerValues]
       .map((value) => normalizeComparableText(value))
@@ -780,8 +773,8 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
 
     return true;
   });
-  const primaryMetrics = metrics.slice(0, 3);
-  const secondaryDetails = details.slice(0, 2);
+  const primaryMetrics = metrics;
+  const secondaryDetails = details;
 
   const panelSlideReducedMotion = panelComponentReduceMotion;
   const panelEnterOffsetX = performanceMode ? -112 : -148;
@@ -842,13 +835,13 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
         layout: "position",
         transition: { layout: { type: "spring", stiffness: 140, damping: 22, mass: 0.86 } },
       },
-      create(PanelAtmosphere, { reduceMotion: panelReduceMotion, performanceMode, panelVisual: panelAtmosphereVisual }),
+      create(PanelAtmosphere, { reduceMotion: panelReduceMotion, performanceMode, panelVisual, activeTheme }),
       create(
         LayoutGroup,
         { id: "property-panel-layout" },
         create(
           motion.div,
-          { className: "grid gap-3 grid-cols-[minmax(0,1fr)_auto] items-start transform-gpu will-change-[transform,opacity] xl:gap-4 2xl:gap-5", variants: sectionVariants, layout: "position" },
+          { className: "mt-[clamp(0.52rem,0.9vmin,1.2rem)] grid gap-3 grid-cols-[minmax(0,1fr)_auto] items-start transform-gpu will-change-[transform,opacity] xl:gap-4 2xl:gap-5", variants: sectionVariants, layout: "position" },
           create(
             motion.div,
             {
@@ -898,13 +891,13 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
           motion.div,
           {
             className:
-              "relative mt-3 grid gap-2.5 transform-gpu will-change-[transform,opacity] pr-[clamp(6.8rem,11vmin,14rem)] pb-[clamp(6.8rem,11vmin,14rem)] sm:pr-[clamp(7.6rem,10vmin,15rem)] sm:pb-[clamp(7.6rem,10vmin,15rem)] lg:pr-[clamp(8.8rem,10.5vmin,16rem)] lg:pb-[clamp(8.8rem,10.5vmin,16rem)]",
+              "relative mt-2.5 grid gap-2 transform-gpu will-change-[transform,opacity] pr-[clamp(7rem,10vmin,12.5rem)] pb-[clamp(0.22rem,0.45vmin,0.62rem)] sm:pr-[clamp(7.6rem,10vmin,13.25rem)] sm:pb-[clamp(0.24rem,0.5vmin,0.68rem)] lg:pr-[clamp(8.4rem,10.5vmin,14rem)] lg:pb-[clamp(0.28rem,0.58vmin,0.76rem)]",
             variants: sectionVariants,
             layout: "position",
           },
           create(
             motion.div,
-            { className: "grid min-w-0 gap-2.5 transform-gpu will-change-[transform,opacity]", variants: sectionVariants, layout: "position" },
+            { className: "grid min-w-0 gap-2 transform-gpu will-change-[transform,opacity]", variants: sectionVariants, layout: "position" },
             primaryMetrics.length
               ? create(
                   motion.div,
@@ -937,7 +930,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
               ? create(
                   motion.div,
                   {
-                    className: "tv-features-wrap transform-gpu will-change-[transform,opacity] flex flex-wrap items-start gap-2 xl:pt-0.5",
+                    className: "tv-features-wrap transform-gpu will-change-[transform,opacity] flex flex-wrap items-start gap-1.5 xl:pt-0.5",
                     variants: sectionVariants,
                     layout: "position",
                   },
@@ -956,7 +949,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
             motion.div,
             {
               className:
-                "tv-qr-slot absolute right-[clamp(0.8rem,1.15vw,1.35rem)] bottom-[clamp(0.8rem,1.15vw,1.35rem)] z-[5] grid w-fit justify-items-end gap-1 text-right transform-gpu will-change-[transform,opacity]",
+                "tv-qr-slot absolute right-[clamp(0.6rem,0.95vw,1.15rem)] bottom-[clamp(0.08rem,0.2vw,0.26rem)] z-[5] grid w-fit justify-items-end gap-1 text-right transform-gpu will-change-[transform,opacity]",
               variants: sectionVariants,
               layout: "position",
               layoutId: "panel-qr-slot",

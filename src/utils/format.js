@@ -62,11 +62,11 @@
       return "tema1";
     }
 
-    if (["tema2", "estilo2", "style2", "preset2", "neutro", "neutral", "2"].includes(token)) {
+    if (["tema2", "estilo2", "style2", "preset2", "neutro", "neutral", "2", "metal", "metalico", "grismetalico", "graphite", "graphito", "gunmetal", "steel"].includes(token)) {
       return "tema2";
     }
 
-    if (["tema3", "estilo3", "style3", "preset3", "intenso", "intense", "3"].includes(token)) {
+    if (["tema3", "estilo3", "style3", "preset3", "intenso", "intense", "3", "azuloscuro", "navy", "midnight", "deepblue", "oceanooscuro"].includes(token)) {
       return "tema3";
     }
 
@@ -123,10 +123,10 @@
 
   function applyTheme(theme) {
     const fallbackTheme = {
-      primary: "#7dd3fc",
-      secondary: "#dbeafe",
-      tertiary: "#60a5fa",
-      glow: "#f8fafc",
+      primary: "#128a70",
+      secondary: "#6ecfb1",
+      tertiary: "#d1f7ea",
+      glow: "#f7fffb",
     };
     const source = theme && typeof theme === "object" ? theme : {};
     const rawPrimary = normalizeHexColor(source.primary ?? source.theme_primary ?? source.themePrimary ?? source.color, fallbackTheme.primary);
@@ -142,53 +142,67 @@
     };
     const normalizedPreset = resolveThemePreset(source);
     const defaultSurfaces = {
-      bgTop: "#08111c",
-      bgBottom: "#030712",
-      surface0: "rgba(8, 13, 22, 0.94)",
-      surface1: "rgba(9, 14, 23, 0.9)",
-      surface2: "rgba(5, 8, 15, 0.88)",
-      border: "rgba(148, 163, 184, 0.14)",
+      bgTop: "#041812",
+      bgBottom: "#020507",
+      surface0: "rgba(4, 34, 27, 0.7)",
+      surface1: "rgba(5, 28, 23, 0.66)",
+      surface2: "rgba(2, 16, 13, 0.61)",
+      border: "rgba(104, 193, 164, 0.2)",
       borderSoft: "rgba(255, 255, 255, 0.045)",
     };
     const presetSurfaces = {
       tema1: {
-        bgTop: "#25303b",
-        bgBottom: "#121922",
-        surface0: "rgba(36, 46, 58, 0.94)",
-        surface1: "rgba(30, 40, 52, 0.9)",
-        surface2: "rgba(23, 31, 42, 0.88)",
-        border: "rgba(219, 205, 183, 0.22)",
-        borderSoft: "rgba(255, 255, 255, 0.06)",
+        bgTop: "#041812",
+        bgBottom: "#020507",
+        surface0: "rgba(4, 34, 27, 0.7)",
+        surface1: "rgba(5, 28, 23, 0.66)",
+        surface2: "rgba(2, 16, 13, 0.61)",
+        border: "rgba(104, 193, 164, 0.2)",
+        borderSoft: "rgba(255, 255, 255, 0.045)",
       },
       tema2: {
-        bgTop: "#13181d",
-        bgBottom: "#090d11",
-        surface0: "rgba(18, 23, 28, 0.94)",
-        surface1: "rgba(15, 20, 25, 0.9)",
-        surface2: "rgba(11, 15, 20, 0.88)",
-        border: "rgba(171, 162, 146, 0.2)",
-        borderSoft: "rgba(255, 255, 255, 0.052)",
+        bgTop: "#16191e",
+        bgBottom: "#0b0d10",
+        surface0: "rgba(22, 25, 30, 0.69)",
+        surface1: "rgba(18, 21, 25, 0.66)",
+        surface2: "rgba(13, 16, 19, 0.59)",
+        border: "rgba(176, 184, 192, 0.18)",
+        borderSoft: "rgba(255, 255, 255, 0.04)",
       },
       tema3: {
-        bgTop: "#0b1218",
-        bgBottom: "#04070b",
-        surface0: "rgba(11, 18, 24, 0.95)",
-        surface1: "rgba(9, 15, 20, 0.91)",
-        surface2: "rgba(6, 11, 16, 0.89)",
-        border: "rgba(191, 163, 126, 0.26)",
-        borderSoft: "rgba(255, 255, 255, 0.058)",
+        bgTop: "#07111e",
+        bgBottom: "#040812",
+        surface0: "rgba(10, 16, 28, 0.69)",
+        surface1: "rgba(8, 13, 24, 0.66)",
+        surface2: "rgba(6, 10, 18, 0.59)",
+        border: "rgba(120, 150, 182, 0.18)",
+        borderSoft: "rgba(255, 255, 255, 0.05)",
       },
     };
     const derivedSurfaces = {
-      bgTop: blendHexColors("#08111c", palette.primary, 0.22),
-      bgBottom: blendHexColors("#030712", palette.tertiary, 0.2),
-      surface0: hexToRgba(blendHexColors("#0a1220", palette.primary, 0.24), 0.94),
-      surface1: hexToRgba(blendHexColors("#0a111c", palette.secondary, 0.2), 0.9),
-      surface2: hexToRgba(blendHexColors("#070c15", palette.tertiary, 0.18), 0.88),
+      bgTop: blendHexColors("#041812", palette.primary, 0.22),       
+      bgBottom: blendHexColors("#020507", palette.tertiary, 0.2),    
+      surface0: hexToRgba(blendHexColors("#041812", palette.primary, 0.24), 0.7),
+      surface1: hexToRgba(blendHexColors("#03120f", palette.secondary, 0.2), 0.66),
+      surface2: hexToRgba(blendHexColors("#020a08", palette.tertiary, 0.18), 0.61),
       border: hexToRgba(blendHexColors("#94a3b8", palette.secondary, 0.35), 0.19),
       borderSoft: "rgba(255, 255, 255, 0.055)",
     };
     const surfaces = presetSurfaces[normalizedPreset] || derivedSurfaces || defaultSurfaces;
+    const panelGradientTopValue =
+      source.panelGradientTop ??
+      source.panel_gradient_top ??
+      source.panelGradient?.top ??
+      surfaces.surface0 ??
+      "";
+    const panelGradientBottomValue =
+      source.panelGradientBottom ??
+      source.panel_gradient_bottom ??
+      source.panelGradient?.bottom ??
+      surfaces.surface2 ??
+      "";
+    const panelGradientTop = String(panelGradientTopValue).trim() || surfaces.surface0;
+    const panelGradientBottom = String(panelGradientBottomValue).trim() || surfaces.surface2;
 
     const root = document.documentElement;
     const primary = palette.primary;
@@ -209,6 +223,8 @@
     root.style.setProperty("--surface-0", surfaces.surface0);
     root.style.setProperty("--surface-1", surfaces.surface1);
     root.style.setProperty("--surface-2", surfaces.surface2);
+    root.style.setProperty("--tv-panel-gradient-top", panelGradientTop);
+    root.style.setProperty("--tv-panel-gradient-bottom", panelGradientBottom);
     root.style.setProperty("--surface-border", surfaces.border);
     root.style.setProperty("--surface-border-soft", surfaces.borderSoft);
     root.setAttribute("data-visual-style", normalizedPreset || "custom");

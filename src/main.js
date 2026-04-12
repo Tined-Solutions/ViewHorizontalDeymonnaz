@@ -7,6 +7,8 @@ const rootElement = document.getElementById("app");
 
 function App({ utils, catalogSource, sanityConfig }) {
   const [catalog, setCatalog] = React.useState(null);
+  const lastCatalogSignatureRef = React.useRef("");
+  const pollingBusyRef = React.useRef(false);
   const [screen, setScreen] = React.useState({
     title: "Conectando a Sanity",
     description: "Cargando inmuebles publicados.",
@@ -16,6 +18,56 @@ function App({ utils, catalogSource, sanityConfig }) {
   React.useEffect(() => {
     let active = true;
     let unsubscribeCallback = null;
+    let pollIntervalId = null;
+
+    const applyCatalogUpdate = (nextCatalog) => {
+      if (!active || !nextCatalog) {
+        return;
+      }
+
+      if (isCatalogReady(nextCatalog)) {
+        const nextSignature = catalogSignature(nextCatalog);
+
+        if (nextSignature && nextSignature === lastCatalogSignatureRef.current) {
+          return;
+        }
+
+        lastCatalogSignatureRef.current = nextSignature;
+      } else {
+        lastCatalogSignatureRef.current = "";
+      }
+
+      if (nextCatalog.visualTheme) {
+        utils.applyTheme(nextCatalog.visualTheme);
+      }
+
+      setCatalog(nextCatalog);
+
+      if (!isCatalogReady(nextCatalog)) {
+        setScreen({
+          title: nextCatalog.state === "empty" ? "Sin inmuebles publicados" : nextCatalog.state === "unconfigured" ? "Configura Sanity" : "Esperando datos",
+          description: nextCatalog.message ? nextCatalog.message : "Completa la configuracion de Sanity y publica al menos un inmueble.",
+          details: nextCatalog.siteBaseUrl ? `Base de QR: ${nextCatalog.siteBaseUrl}` : "",
+        });
+      }
+    };
+
+    const pollCatalog = async () => {
+      if (!active || pollingBusyRef.current || !catalogSource || typeof catalogSource.loadCatalog !== "function") {
+        return;
+      }
+
+      pollingBusyRef.current = true;
+
+      try {
+        const latestCatalog = await catalogSource.loadCatalog(sanityConfig);
+        applyCatalogUpdate(latestCatalog);
+      } catch (error) {
+        console.error("Error al refrescar catálogo por polling:", error);
+      } finally {
+        pollingBusyRef.current = false;
+      }
+    };
 
     async function loadCatalog() {
       setScreen({
@@ -45,39 +97,37 @@ function App({ utils, catalogSource, sanityConfig }) {
           return;
         }
 
-        if (loadedCatalog && loadedCatalog.visualTheme) {
-          utils.applyTheme(loadedCatalog.visualTheme);
-        }
-
-        setCatalog(loadedCatalog);
-
-        if (!isCatalogReady(loadedCatalog)) {
-          setScreen({
-            title: loadedCatalog && loadedCatalog.state === "empty" ? "Sin inmuebles publicados" : loadedCatalog && loadedCatalog.state === "unconfigured" ? "Configura Sanity" : "Esperando datos",
-            description: loadedCatalog && loadedCatalog.message ? loadedCatalog.message : "Completa la configuracion de Sanity y publica al menos un inmueble.",
-            details: loadedCatalog && loadedCatalog.siteBaseUrl ? `Base de QR: ${loadedCatalog.siteBaseUrl}` : "",
-          });
-        }
+        applyCatalogUpdate(loadedCatalog);
         
         if (typeof catalogSource.listenCatalog === "function") {
           unsubscribeCallback = catalogSource.listenCatalog(sanityConfig, (updatedCatalog) => {
-            if (active && updatedCatalog) {
-              if (updatedCatalog.visualTheme) {
-                utils.applyTheme(updatedCatalog.visualTheme);
-              }
-              
-              setCatalog(updatedCatalog);
-              
-              if (!isCatalogReady(updatedCatalog)) {
-                setScreen({
-                  title: updatedCatalog.state === "empty" ? "Sin inmuebles publicados" : updatedCatalog.state === "unconfigured" ? "Configura Sanity" : "Esperando datos",
-                  description: updatedCatalog.message ? updatedCatalog.message : "Completa la configuracion de Sanity y publica al menos un inmueble.",
-                  details: updatedCatalog.siteBaseUrl ? `Base de QR: ${updatedCatalog.siteBaseUrl}` : "",
-                });
-              }
-            }
+            applyCatalogUpdate(updatedCatalog);
           });
         }
+
+        const configuredIntervalMs = Number(sanityConfig.liveRefreshIntervalMs);
+        const refreshIntervalMs = Number.isFinite(configuredIntervalMs) && configuredIntervalMs >= 1000 ? configuredIntervalMs : 2500;
+
+        pollIntervalId = window.setInterval(() => {
+          void pollCatalog();
+        }, refreshIntervalMs);
+
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === "visible") {
+            void pollCatalog();
+          }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        const previousCleanup = unsubscribeCallback;
+        unsubscribeCallback = () => {
+          if (typeof previousCleanup === "function") {
+            previousCleanup();
+          }
+
+          document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
 
       } catch (error) {
         if (!active) {
@@ -97,7 +147,13 @@ function App({ utils, catalogSource, sanityConfig }) {
 
     return () => {
       active = false;
-      if (unsubscribeCallback) unsubscribeCallback();
+      if (pollIntervalId) {
+        window.clearInterval(pollIntervalId);
+      }
+
+      if (unsubscribeCallback) {
+        unsubscribeCallback();
+      }
     };
   }, [catalogSource, sanityConfig, utils]);
 

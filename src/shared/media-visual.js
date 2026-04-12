@@ -2,10 +2,10 @@ import { clampNumber, mixChannel } from "./math.js";
 
 export const DEFAULT_MEDIA_VISUAL = Object.freeze({
   brightness: 118,
-  red: 18,
-  green: 138,
-  blue: 112,
-  saturation: 0.58,
+  red: 24,
+  green: 40,
+  blue: 58,
+  saturation: 0.34,
 });
 
 const mediaVisualCache = new Map();
@@ -39,9 +39,9 @@ export function buildPanelVisual(visual, performanceMode) {
   const saturationBase = performanceMode ? 92 : 100;
   const saturationRange = performanceMode ? 6 : 18;
   const tintWeight = 0.34 + normalizedSaturation * 0.38;
-  const tintRed = mixChannel(18, safeVisual.red, tintWeight);
-  const tintGreen = mixChannel(132, safeVisual.green, tintWeight);
-  const tintBlue = mixChannel(106, safeVisual.blue, tintWeight);
+  const tintRed = mixChannel(DEFAULT_MEDIA_VISUAL.red, safeVisual.red, tintWeight);        
+  const tintGreen = mixChannel(DEFAULT_MEDIA_VISUAL.green, safeVisual.green, tintWeight);   
+  const tintBlue = mixChannel(DEFAULT_MEDIA_VISUAL.blue, safeVisual.blue, tintWeight);     
   const tintRgb = `${tintRed}, ${tintGreen}, ${tintBlue}`;
   const priceTop = `rgb(${mixChannel(236, tintRed, 0.18)}, ${mixChannel(252, tintGreen, 0.18)}, ${mixChannel(247, tintBlue, 0.18)})`;
   const priceMid = `rgb(${mixChannel(196, tintRed, 0.48)}, ${mixChannel(236, tintGreen, 0.48)}, ${mixChannel(226, tintBlue, 0.48)})`;

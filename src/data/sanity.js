@@ -1,29 +1,37 @@
 (function () {
   const namespace = (window.InmoCatalogSource = window.InmoCatalogSource || {});
   const defaultTheme = {
-    primary: "#0a7a63",
-    secondary: "#064538",
-    tertiary: "#14b594",
-    glow: "#ccfff2",
+    primary: "#128a70",
+    secondary: "#6ecfb1",
+    tertiary: "#d1f7ea",
+    glow: "#f7fffb",
+    panelGradientTop: "rgba(4, 34, 27, 0.7)",
+    panelGradientBottom: "rgba(2, 16, 13, 0.61)",
   };
   const fallbackVisualThemePresets = {
     tema1: {
-      primary: "#02251d",
-      secondary: "#064538",
-      tertiary: "#0a7a63",
-      glow: "#16c3a0",
+      primary: "#128a70",
+      secondary: "#6ecfb1",
+      tertiary: "#d1f7ea",
+      glow: "#f7fffb",
+      panelGradientTop: "rgba(4, 34, 27, 0.7)",
+      panelGradientBottom: "rgba(2, 16, 13, 0.61)",
     },
     tema2: {
-      primary: "#054236",
-      secondary: "#0a6a55",
-      tertiary: "#10a986",
-      glow: "#5be7c8",
+      primary: "#5d6670",
+      secondary: "#737c86",
+      tertiary: "#8f98a3",
+      glow: "#bcc3ca",
+      panelGradientTop: "rgba(22, 25, 30, 0.69)",
+      panelGradientBottom: "rgba(13, 16, 19, 0.59)",
     },
     tema3: {
-      primary: "#065143",
-      secondary: "#0f7c65",
-      tertiary: "#1cb892",
-      glow: "#b7fff3",
+      primary: "#173b5d",
+      secondary: "#235784",
+      tertiary: "#387ab0",
+      glow: "#c9ddf5",
+      panelGradientTop: "rgba(10, 16, 28, 0.69)",
+      panelGradientBottom: "rgba(6, 10, 18, 0.59)",
     },
   };
 
@@ -253,6 +261,11 @@
     return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(text) ? text : fallback;
   }
 
+  function normalizeThemeGradient(value, fallback) {
+    const text = toText(value);
+    return text || fallback;
+  }
+
   function slugify(value) {
     return toText(value)
       .toLowerCase()
@@ -380,13 +393,89 @@
   }
 
   function normalizeTheme(theme, fallback = defaultTheme) {
+    if (typeof theme === "string") {
+      const presetKey = resolveVisualPresetKey(theme);
+      const presetTheme = getVisualThemePresets()[presetKey] || fallback;
+
+      return {
+        primary: sanitizeHexColor(presetTheme.primary, fallback.primary),
+        secondary: sanitizeHexColor(presetTheme.secondary, fallback.secondary),
+        tertiary: sanitizeHexColor(presetTheme.tertiary, fallback.tertiary),
+        glow: sanitizeHexColor(presetTheme.glow, fallback.glow),
+        panelGradientTop: normalizeThemeGradient(
+          presetTheme.panelGradientTop ?? presetTheme.panel_gradient_top ?? presetTheme.panelGradient?.top,
+          fallback.panelGradientTop
+        ),
+        panelGradientBottom: normalizeThemeGradient(
+          presetTheme.panelGradientBottom ?? presetTheme.panel_gradient_bottom ?? presetTheme.panelGradient?.bottom,
+          fallback.panelGradientBottom
+        ),
+      };
+    }
+
     const source = theme && typeof theme === "object" ? theme : {};
+    const hasDirectPalette =
+      hasValue(source.primary) ||
+      hasValue(source.secondary) ||
+      hasValue(source.tertiary) ||
+      hasValue(source.glow) ||
+      hasValue(source.theme_primary) ||
+      hasValue(source.theme_secondary) ||
+      hasValue(source.theme_tertiary) ||
+      hasValue(source.theme_glow);
+
+    if (!hasDirectPalette) {
+      const tokenFromObject = normalizeFieldToken(
+        pickField(source, [
+          "value",
+          "name",
+          "title",
+          "label",
+          "slug.current",
+          "slug",
+          "key",
+          "id",
+          "themePreset",
+          "themeMode",
+          "configuracionVisual",
+          "tema",
+        ])
+      );
+
+      if (tokenFromObject) {
+        const presetKey = resolveVisualPresetKey(tokenFromObject);
+        const presetTheme = getVisualThemePresets()[presetKey] || fallback;
+
+        return {
+          primary: sanitizeHexColor(presetTheme.primary, fallback.primary),
+          secondary: sanitizeHexColor(presetTheme.secondary, fallback.secondary),
+          tertiary: sanitizeHexColor(presetTheme.tertiary, fallback.tertiary),
+          glow: sanitizeHexColor(presetTheme.glow, fallback.glow),
+          panelGradientTop: normalizeThemeGradient(
+            source.panelGradientTop ?? source.panel_gradient_top ?? source.panelGradient?.top ?? presetTheme.panelGradientTop ?? presetTheme.panel_gradient_top ?? presetTheme.panelGradient?.top,
+            fallback.panelGradientTop
+          ),
+          panelGradientBottom: normalizeThemeGradient(
+            source.panelGradientBottom ?? source.panel_gradient_bottom ?? source.panelGradient?.bottom ?? presetTheme.panelGradientBottom ?? presetTheme.panel_gradient_bottom ?? presetTheme.panelGradient?.bottom,
+            fallback.panelGradientBottom
+          ),
+        };
+      }
+    }
 
     return {
       primary: sanitizeHexColor(source.primary ?? source.theme_primary ?? source.themePrimary ?? source.color, fallback.primary),
       secondary: sanitizeHexColor(source.secondary ?? source.theme_secondary ?? source.themeSecondary, fallback.secondary),
       tertiary: sanitizeHexColor(source.tertiary ?? source.theme_tertiary ?? source.themeTertiary, fallback.tertiary),
       glow: sanitizeHexColor(source.glow ?? source.theme_glow ?? source.themeGlow, fallback.glow),
+      panelGradientTop: normalizeThemeGradient(
+        source.panelGradientTop ?? source.panel_gradient_top ?? source.panelGradient?.top ?? source.gradientTop ?? source.gradient_top,
+        fallback.panelGradientTop
+      ),
+      panelGradientBottom: normalizeThemeGradient(
+        source.panelGradientBottom ?? source.panel_gradient_bottom ?? source.panelGradient?.bottom ?? source.gradientBottom ?? source.gradient_bottom,
+        fallback.panelGradientBottom
+      ),
     };
   }
 
@@ -397,15 +486,15 @@
       return "tema1";
     }
 
-    if (["tema1", "preset1", "estilo1", "opcion1", "1", "default", "clasico", "classic", "azul", "blue", "oceano", "ocean", "claro", "light"].includes(normalized)) {
+    if (["tema1", "preset1", "estilo1", "opcion1", "1", "default", "clasico", "classic", "verde", "green", "emerald", "teal", "turquesa", "turquoise", "jade", "mint", "forest", "moss", "natural"].includes(normalized)) {
       return "tema1";
     }
 
-    if (["tema2", "preset2", "estilo2", "opcion2", "2", "neutro", "neutral", "gris", "gray", "slate"].includes(normalized)) {
+    if (["tema2", "preset2", "estilo2", "opcion2", "2", "neutro", "neutral", "gris", "gray", "slate", "metal", "metalico", "grismetalico", "graphite", "graphito", "gunmetal", "steel", "plata", "silver"].includes(normalized)) {
       return "tema2";
     }
 
-    if (["tema3", "preset3", "estilo3", "opcion3", "3", "intenso", "intense", "vibrante", "vibrant", "bold", "alto"].includes(normalized)) {
+    if (["tema3", "preset3", "estilo3", "opcion3", "3", "intenso", "intense", "vibrante", "vibrant", "bold", "alto", "azul", "blue", "oceano", "ocean", "azuloscuro", "darkblue", "navy", "midnight", "deepblue", "oceanooscuro"].includes(normalized)) {
       return "tema3";
     }
 
@@ -458,15 +547,31 @@
       selectionValue && typeof selectionValue === "object"
         ? normalizeFieldToken(pickField(selectionValue, ["value", "name", "title", "label", "slug.current", "slug", "key", "id"]))
         : normalizeFieldToken(selectionValue);
+    const themeTokenFromSource =
+      typeof source.theme === "string"
+        ? normalizeFieldToken(source.theme)
+        : source.theme && typeof source.theme === "object"
+          ? normalizeFieldToken(pickField(source.theme, ["value", "name", "title", "label", "slug.current", "slug", "key", "id", "themePreset", "themeMode", "configuracionVisual", "tema"]))
+          : "";
+    const resolvedSelectionToken = selectionToken || themeTokenFromSource;
 
     const hasLegacyTheme =
-      hasValue(source.theme) ||
+      (source.theme &&
+        typeof source.theme === "object" &&
+        (hasValue(source.theme.primary) ||
+          hasValue(source.theme.secondary) ||
+          hasValue(source.theme.tertiary) ||
+          hasValue(source.theme.glow) ||
+          hasValue(source.theme.theme_primary) ||
+          hasValue(source.theme.theme_secondary) ||
+          hasValue(source.theme.theme_tertiary) ||
+          hasValue(source.theme.theme_glow))) ||
       hasValue(source.theme_primary) ||
       hasValue(source.theme_secondary) ||
       hasValue(source.theme_tertiary) ||
       hasValue(source.theme_glow);
 
-    if (!selectionToken && hasLegacyTheme) {
+    if (!resolvedSelectionToken && hasLegacyTheme) {
       return {
         ...normalizeTheme(
           source.theme || {
@@ -504,17 +609,22 @@
       }
     }
 
-    if (!selectionToken) {
+    if (!resolvedSelectionToken) {
       return null;
     }
 
-    const presetKey = resolveVisualPresetKey(selectionToken);
+    const presetKey = resolveVisualPresetKey(resolvedSelectionToken);
     const presetTheme = getVisualThemePresets()[presetKey] || defaultTheme;
+    const presetValueSource = hasValue(selectionValue)
+      ? selectionValue
+      : typeof source.theme === "string"
+        ? source.theme
+        : resolvedSelectionToken;
 
     return {
       ...normalizeTheme(presetTheme, fallbackTheme),
       visualPresetKey: presetKey,
-      visualPresetValue: toText(selectionValue),
+      visualPresetValue: toText(presetValueSource),
       forceExactTheme: true,
     };
   }
@@ -1745,11 +1855,15 @@
     // We listen to any changes (creation, update, deletion) on the relevant types.
     const query = `*[_type in $types]`;
     const params = { types: allRelevantTypes };
+    const configuredDebounceMs = Number(config.listenDebounceMs);
+    const listenDebounceMs = Number.isFinite(configuredDebounceMs) ? Math.max(100, configuredDebounceMs) : 250;
+    const configuredVisibility = toText(config.listenVisibility).toLowerCase();
+    const listenVisibility = ["sync", "query", "transaction"].includes(configuredVisibility) ? configuredVisibility : "sync";
 
     let updateTimeout;
 
-    const subscription = client.listen(query, params, { includeResult: false, visibility: "query" })
-      .subscribe((update) => {
+    const subscription = client.listen(query, params, { includeResult: false, visibility: listenVisibility })
+      .subscribe(() => {
         // Debounce to avoid multiple rapid re-fetches if many documents are published down at once
         clearTimeout(updateTimeout);
         updateTimeout = setTimeout(async () => {
@@ -1759,7 +1873,9 @@
           } catch (error) {
             console.error("Error al actualizar catálogo vía Listen API:", error);
           }
-        }, 1000);
+        }, listenDebounceMs);
+      }, (error) => {
+        console.error("Listen API desconectada:", error);
       });
 
     return () => {
