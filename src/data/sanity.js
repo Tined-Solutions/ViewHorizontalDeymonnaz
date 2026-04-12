@@ -89,6 +89,122 @@
     return true;
   }
 
+  function collectPublicationTargets(value, targets, seen = new Set()) {
+    if (!hasValue(value)) {
+      return;
+    }
+
+    if (value && typeof value === "object") {
+      if (seen.has(value)) {
+        return;
+      }
+
+      seen.add(value);
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((entry) => collectPublicationTargets(entry, targets, seen));
+      return;
+    }
+
+    if (typeof value === "object") {
+      const keys = [
+        "value",
+        "label",
+        "title",
+        "name",
+        "current",
+        "publicarEn",
+        "publicacion",
+        "canal",
+        "canalPublicacion",
+        "publicationChannel",
+        "publicationTarget",
+      ];
+
+      keys.forEach((key) => {
+        const nested = readField(value, key);
+
+        if (hasValue(nested)) {
+          collectPublicationTargets(nested, targets, seen);
+        }
+      });
+
+      return;
+    }
+
+    const text = toText(value);
+
+    if (text) {
+      targets.push(text);
+    }
+  }
+
+  function isVerticalPublicationTarget(value) {
+    const normalized = normalizeFieldToken(value);
+
+    if (!normalized) {
+      return false;
+    }
+
+    if (normalized === "vertical" || normalized === "ambos") {
+      return true;
+    }
+
+    const segments = toText(value)
+      .toLowerCase()
+      .split(/[,;/|+&]|\by\b|\band\b/)
+      .map((segment) => normalizeFieldToken(segment))
+      .filter(Boolean);
+
+    return segments.includes("vertical") || segments.includes("ambos");
+  }
+
+  function isPublishedForVertical(doc) {
+    const publishInValue = pickField(
+      doc,
+      [
+        "Difusion.Publicar en",
+        "Difusion.publicarEn",
+        "Difusion.canalPublicacion",
+        "Difusion.publicationChannel",
+        "Difusion.publicationTarget",
+        "difusion.Publicar en",
+        "difusion.publicarEn",
+        "difusion.publicar_en",
+        "difusion.publicacion",
+        "difusion.canal",
+        "difusion.canalPublicacion",
+        "difusion.publicationChannel",
+        "difusion.publicationTarget",
+        "diffusion.publishIn",
+        "diffusion.publicationChannel",
+        "diffusion.publicationTarget",
+        "Publicar en",
+        "publicar en",
+        "publicarEn",
+        "publicar_en",
+        "sitioPublicacion",
+        "sitio_publicacion",
+        "sitioDePublicacion",
+        "publicacion",
+        "canalPublicacion",
+        "publicationChannel",
+        "publicationTarget",
+      ],
+      undefined
+    );
+
+    if (!hasValue(publishInValue)) {
+      return false;
+    }
+
+    const targets = [];
+    collectPublicationTargets(publishInValue, targets);
+
+    return targets.some((target) => isVerticalPublicationTarget(target));
+  }
+
   function parseNumber(value) {
     const cleaned = toText(value).replace(/[^0-9.-]/g, "");
     const parsed = Number.parseFloat(cleaned);
@@ -856,6 +972,12 @@
       "href",
       "publishedurl",
       "publicurl",
+      "publicaren",
+      "sitiopublicacion",
+      "sitiodepublicacion",
+      "canalpublicacion",
+      "publicationchannel",
+      "publicationtarget",
       "publicacionurl",
       "landingurl",
       "qrlink",
@@ -1527,7 +1649,11 @@
   }
 
   function normalizeProperty(doc, config) {
-    if (!doc || typeof doc !== "object" || !isRecordActive(doc)) {
+    if (!doc || typeof doc !== "object") {
+      return null;
+    }
+
+    if (!isPublishedForVertical(doc) || !isRecordActive(doc)) {
       return null;
     }
 
@@ -1998,11 +2124,12 @@
     const configuredDebounceMs = Number(config.listenDebounceMs);
     const listenDebounceMs = Number.isFinite(configuredDebounceMs) ? Math.max(100, configuredDebounceMs) : 250;
     const configuredVisibility = toText(config.listenVisibility).toLowerCase();
-    const listenVisibility = ["sync", "query", "transaction"].includes(configuredVisibility) ? configuredVisibility : "sync";
+    const listenVisibility = ["query", "transaction"].includes(configuredVisibility) ? configuredVisibility : "query";
+    const listenOptions = { includeResult: false, visibility: listenVisibility };
 
     let updateTimeout;
 
-    const subscription = client.listen(query, params, { includeResult: false, visibility: listenVisibility })
+    const subscription = client.listen(query, params, listenOptions)
       .subscribe(() => {
         // Debounce to avoid multiple rapid re-fetches if many documents are published down at once
         clearTimeout(updateTimeout);

@@ -6,7 +6,7 @@ window.InmoSanityConfig = {
 	timeoutMs: 8000,
 	liveRefreshIntervalMs: 2500,
 	listenDebounceMs: 250,
-	listenVisibility: "sync",
+	listenVisibility: "query",
 	defaultDurationMs: 20000,
 	panelRevealDelayMs: 1000,
 	tvPerformanceMode: true,

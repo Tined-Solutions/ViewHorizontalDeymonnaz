@@ -1,8 +1,8 @@
-import { parseNumber, parsePrice, pickField, parseDuration, slugify } from './mappers.js';
+import { parseNumber, parsePrice, readField, pickField, parseDuration, slugify } from './mappers.js';
 import { normalizeMedia } from './media.js';
 import { buildServiceFeaturesFromFlags, buildPanelMetrics } from './metrics.js';
 import { normalizeTheme, resolveVisualTheme } from './theme.js';
-import { toText, hasValue, toArray, isRecordActive, normalizeFeatures, normalizeDetails, joinUniqueTexts, normalizeOperationLabel, buildPropertySummary } from './utils.js';
+import { toText, normalizeFieldToken, hasValue, toArray, isRecordActive, normalizeFeatures, normalizeDetails, joinUniqueTexts, normalizeOperationLabel, buildPropertySummary } from './utils.js';
 
 export function normalizeCompany(settings, config) {
     const source = settings && typeof settings === "object" ? settings : {};
@@ -13,8 +13,128 @@ export function normalizeCompany(settings, config) {
     };
   }
 
+function collectPublicationTargets(value, targets, seen = new Set()) {
+    if (!hasValue(value)) {
+      return;
+    }
+
+    if (value && typeof value === "object") {
+      if (seen.has(value)) {
+        return;
+      }
+
+      seen.add(value);
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((entry) => collectPublicationTargets(entry, targets, seen));
+      return;
+    }
+
+    if (typeof value === "object") {
+      const keys = [
+        "value",
+        "label",
+        "title",
+        "name",
+        "current",
+        "publicarEn",
+        "publicacion",
+        "canal",
+        "canalPublicacion",
+        "publicationChannel",
+        "publicationTarget",
+      ];
+
+      keys.forEach((key) => {
+        const nested = readField(value, key);
+
+        if (hasValue(nested)) {
+          collectPublicationTargets(nested, targets, seen);
+        }
+      });
+
+      return;
+    }
+
+    const text = toText(value);
+
+    if (text) {
+      targets.push(text);
+    }
+  }
+
+function isVerticalPublicationTarget(value) {
+    const normalized = normalizeFieldToken(value);
+
+    if (!normalized) {
+      return false;
+    }
+
+    if (normalized === "vertical" || normalized === "ambos") {
+      return true;
+    }
+
+    const segments = toText(value)
+      .toLowerCase()
+      .split(/[,;/|+&]|\by\b|\band\b/)
+      .map((segment) => normalizeFieldToken(segment))
+      .filter(Boolean);
+
+    return segments.includes("vertical") || segments.includes("ambos");
+  }
+
+function isPublishedForVertical(doc) {
+    const publishInValue = pickField(
+      doc,
+      [
+        "Difusion.Publicar en",
+        "Difusion.publicarEn",
+        "Difusion.canalPublicacion",
+        "Difusion.publicationChannel",
+        "Difusion.publicationTarget",
+        "difusion.Publicar en",
+        "difusion.publicarEn",
+        "difusion.publicar_en",
+        "difusion.publicacion",
+        "difusion.canal",
+        "difusion.canalPublicacion",
+        "difusion.publicationChannel",
+        "difusion.publicationTarget",
+        "diffusion.publishIn",
+        "diffusion.publicationChannel",
+        "diffusion.publicationTarget",
+        "Publicar en",
+        "publicar en",
+        "publicarEn",
+        "publicar_en",
+        "sitioPublicacion",
+        "sitio_publicacion",
+        "sitioDePublicacion",
+        "publicacion",
+        "canalPublicacion",
+        "publicationChannel",
+        "publicationTarget",
+      ],
+      undefined
+    );
+
+    if (!hasValue(publishInValue)) {
+      return false;
+    }
+
+    const targets = [];
+    collectPublicationTargets(publishInValue, targets);
+
+    return targets.some((target) => isVerticalPublicationTarget(target));
+  }
+
 export function normalizeProperty(doc, config) {
-    if (!doc || typeof doc !== "object" || !isRecordActive(doc)) {
+    if (!doc || typeof doc !== "object") {
+      return null;
+    }
+
+    if (!isPublishedForVertical(doc) || !isRecordActive(doc)) {
       return null;
     }
 
