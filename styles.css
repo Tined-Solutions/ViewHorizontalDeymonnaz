@@ -928,6 +928,125 @@ body {
   flex: 0 1 auto;
 }
 
+.tv-panel {
+  padding-bottom: 0 !important;
+}
+
+.tv-panel-body {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.tv-panel-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.tv-panel-content > :last-child {
+  margin-top: auto !important;
+}
+
+.tv-panel-bottom-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: auto;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  gap: clamp(0.35rem, 0.7vw, 0.7rem);
+}
+
+.tv-qr-cluster {
+  --tv-corner-badge-size: clamp(112px, 8.2vw, 172px);
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 0;
+}
+
+.tv-panel-logo {
+  width: clamp(156px, 11.2vw, 248px);
+  height: auto;
+  max-height: clamp(112px, 8.2vw, 172px);
+  display: block;
+  object-fit: contain;
+  box-sizing: border-box;
+  border-radius: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(5, 10, 20, 0.48);
+  padding: clamp(0.2rem, 0.33vw, 0.35rem);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.tv-panel-qr-slot {
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  align-self: flex-end !important;
+  margin: 0 !important;
+  gap: 0.14rem !important;
+  justify-items: center !important;
+  text-align: center !important;
+}
+
+.tv-panel-qr-slot .tv-qr {
+  width: var(--tv-corner-badge-size) !important;
+  height: var(--tv-corner-badge-size) !important;
+}
+
+.tv-panel-qr-slot .tv-qr-caption {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.02 !important;
+}
+
+.tv-panel .tv-title {
+  font-size: clamp(1.34rem, 2.46vw, 2.92rem) !important;
+  line-height: 0.95 !important;
+}
+
+.tv-panel .tv-price {
+  font-size: clamp(1.28rem, 2.18vw, 2.62rem) !important;
+}
+
+.tv-panel .tv-metric > div:first-child {
+  font-size: clamp(0.8rem, 1.08vw, 0.98rem) !important;
+}
+
+.tv-panel .tv-metric > div:last-child {
+  font-size: clamp(0.42rem, 0.52vw, 0.54rem) !important;
+  opacity: 0.76 !important;
+}
+
+.tv-panel .tv-detail > div:first-child {
+  font-size: clamp(0.42rem, 0.52vw, 0.54rem) !important;
+  opacity: 0.76 !important;
+}
+
+.tv-panel .tv-detail > div:last-child {
+  font-size: clamp(0.64rem, 0.82vw, 0.82rem) !important;
+  opacity: 0.86 !important;
+}
+
+.tv-panel .tv-feature-pill {
+  width: clamp(1.82rem, 1.52vw, 2.12rem) !important;
+  height: clamp(1.82rem, 1.52vw, 2.12rem) !important;
+  opacity: 0.86;
+}
+
+.tv-panel .tv-service-icon {
+  width: clamp(0.8rem, 0.72vw, 0.98rem) !important;
+  height: clamp(0.8rem, 0.72vw, 0.98rem) !important;
+}
+
 .property-panel::before {
   content: "";
   position: absolute;
@@ -1659,7 +1778,7 @@ html.tv-performance-mode .media-stage__overlay {
     padding-top: clamp(1.1rem, 1.35vmin, 1.9rem) !important;
     padding-right: clamp(1.1rem, 1.35vmin, 1.9rem) !important;
     padding-left: clamp(1.1rem, 1.35vmin, 1.9rem) !important;
-    padding-bottom: clamp(0.16rem, 0.28vmin, 0.42rem) !important;
+    padding-bottom: 0 !important;
     border-radius: clamp(1.7rem, 1.9vmin, 2.35rem) !important;
     max-height: min(46vh, 980px) !important;
     gap: clamp(0.65rem, 0.8vmin, 1.05rem) !important;
@@ -1723,10 +1842,20 @@ html.tv-performance-mode .media-stage__overlay {
 
   .tv-qr-slot {
     width: fit-content !important;
-    align-self: start !important;
+    align-self: flex-end !important;
     justify-self: end !important;
     justify-items: center !important;
     text-align: center !important;
+  }
+
+  .tv-panel-bottom-row {
+    margin-top: auto !important;
+    padding-bottom: 0 !important;
+  }
+
+  .tv-panel-logo {
+    width: clamp(210px, 9.6vmin, 290px) !important;
+    max-height: clamp(150px, 6.8vmin, 210px) !important;
   }
 
   .tv-qr {
@@ -1801,6 +1930,7 @@ html.tv-performance-mode .media-stage__overlay {
     grid-template-rows: auto auto minmax(0, 1fr) !important;
     align-content: start !important;
     gap: clamp(0.38rem, 0.75vw, 0.72rem) !important;
+    padding-bottom: 0 !important;
   }
 
   .tv-panel-header {
@@ -1820,7 +1950,7 @@ html.tv-performance-mode .media-stage__overlay {
   }
 
   .tv-panel .tv-title {
-    font-size: clamp(1.16rem, 2.02vw, 2.34rem) !important;
+    font-size: clamp(1.34rem, 2.46vw, 2.92rem) !important;
     line-height: 0.95 !important;
   }
 
@@ -1830,7 +1960,7 @@ html.tv-performance-mode .media-stage__overlay {
   }
 
   .tv-panel .tv-price {
-    font-size: clamp(1.1rem, 1.78vw, 2.05rem) !important;
+    font-size: clamp(1.28rem, 2.18vw, 2.62rem) !important;
   }
 
   .tv-panel-summary {
@@ -1839,21 +1969,24 @@ html.tv-performance-mode .media-stage__overlay {
 
   .tv-panel-body {
     position: static !important;
+    display: flex !important;
+    flex-direction: column !important;
     height: 100% !important;
     margin-top: 0 !important;
     gap: clamp(0.32rem, 0.58vw, 0.56rem) !important;
     align-content: start !important;
     min-height: 0 !important;
-    padding-right: clamp(7.4rem, 10.2vw, 10.8rem) !important;
-    padding-bottom: clamp(0.2rem, 0.46vw, 0.56rem) !important;
+    padding-right: 0 !important;
+    padding-bottom: 0 !important;
   }
 
   .tv-panel-content {
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
-    height: 100% !important;
-    min-height: 100% !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
     gap: clamp(0.3rem, 0.54vw, 0.52rem) !important;
   }
 
@@ -1868,16 +2001,28 @@ html.tv-performance-mode .media-stage__overlay {
   }
 
   .tv-qr-cluster {
-    --tv-corner-badge-size: clamp(84px, 6.4vw, 126px);
+    --tv-corner-badge-size: clamp(112px, 8.2vw, 172px);
     display: inline-flex;
     align-items: flex-end;
     justify-content: flex-end;
+    gap: 0;
+  }
+
+  .tv-panel-bottom-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: auto;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
     gap: clamp(0.35rem, 0.7vw, 0.7rem);
   }
 
-  .tv-company-logo {
-    width: var(--tv-corner-badge-size);
-    height: var(--tv-corner-badge-size);
+  .tv-panel-logo {
+    width: clamp(156px, 11.2vw, 248px);
+    height: auto;
+    max-height: clamp(112px, 8.2vw, 172px);
     display: block;
     object-fit: contain;
     box-sizing: border-box;
@@ -1894,18 +2039,52 @@ html.tv-performance-mode .media-stage__overlay {
   }
 
   .tv-panel-qr-slot {
-    position: absolute !important;
-    right: clamp(0.42rem, 0.82vw, 0.94rem) !important;
-    bottom: 0 !important;
+    position: static !important;
+    right: auto !important;
+    bottom: auto !important;
+    align-self: auto !important;
     margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    gap: 0.14rem !important;
     justify-items: center !important;
     text-align: center !important;
   }
 
   .tv-panel-qr-slot .tv-qr-caption {
-    margin-top: 0.2rem;
+    margin: 0 !important;
+    padding: 0 !important;
     text-align: center !important;
-    line-height: 1.1 !important;
+    line-height: 1.02 !important;
+  }
+
+  .tv-panel .tv-metric > div:first-child {
+    font-size: clamp(0.8rem, 1.08vw, 0.98rem) !important;
+  }
+
+  .tv-panel .tv-metric > div:last-child {
+    font-size: clamp(0.42rem, 0.52vw, 0.54rem) !important;
+    opacity: 0.76 !important;
+  }
+
+  .tv-panel .tv-detail > div:first-child {
+    font-size: clamp(0.42rem, 0.52vw, 0.54rem) !important;
+    opacity: 0.76 !important;
+  }
+
+  .tv-panel .tv-detail > div:last-child {
+    font-size: clamp(0.64rem, 0.82vw, 0.82rem) !important;
+    opacity: 0.86 !important;
+  }
+
+  .tv-panel .tv-feature-pill {
+    width: clamp(1.82rem, 1.52vw, 2.12rem) !important;
+    height: clamp(1.82rem, 1.52vw, 2.12rem) !important;
+    opacity: 0.86;
+  }
+
+  .tv-panel .tv-service-icon {
+    width: clamp(0.8rem, 0.72vw, 0.98rem) !important;
+    height: clamp(0.8rem, 0.72vw, 0.98rem) !important;
   }
 
   .tv-panel .tv-metrics-grid,

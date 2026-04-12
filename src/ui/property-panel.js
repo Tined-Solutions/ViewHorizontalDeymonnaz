@@ -851,7 +851,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
               layout: "position",
             },
             create(AnimatedBlock, { as: "p", className: "tv-kicker text-[clamp(0.58rem,0.95vw,0.86rem)] uppercase tracking-[0.24em] text-cyan-200/80", reduceMotion: panelComponentReduceMotion, delay: panelIntroBaseDelay + 0.01, y: 8, layout: "position" }, kickerText),
-            create(AnimatedBlock, { as: "h1", className: "tv-title font-display mt-1 text-[clamp(1.35rem,3.8vw,4.2rem)] leading-[0.92] text-white", reduceMotion: panelComponentReduceMotion, delay: panelIntroBaseDelay + 0.03, y: 8, layout: "position", layoutId: "panel-title" }, titleText),
+            create(AnimatedBlock, { as: "h1", className: "tv-title font-display mt-1 text-[clamp(1.5rem,4.2vw,4.7rem)] leading-[0.92] text-white", reduceMotion: panelComponentReduceMotion, delay: panelIntroBaseDelay + 0.03, y: 8, layout: "position", layoutId: "panel-title" }, titleText),
             create(AnimatedBlock, { as: "p", className: "tv-location mt-2 text-[clamp(0.62rem,1vw,1rem)] uppercase tracking-[0.2em] text-slate-200/70", reduceMotion: panelComponentReduceMotion, delay: panelIntroBaseDelay + 0.05, y: 7, layout: "position" }, locationText)
           ),
           create(
@@ -867,7 +867,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
               AnimatedBlock,
               {
                 as: "p",
-                className: "tv-price text-[clamp(1.25rem,3vw,3.3rem)] leading-none",
+                className: "tv-price text-[clamp(1.45rem,3.45vw,3.95rem)] leading-none",
                 reduceMotion: panelComponentReduceMotion,
                 delay: panelIntroBaseDelay + 0.03,
                 y: 8,
@@ -947,39 +947,43 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
               : null
           ),
           create(
-            motion.div,
-            {
-              className:
-                "tv-panel-qr-slot tv-qr-slot absolute right-[clamp(0.52rem,0.86vw,1.06rem)] bottom-[clamp(0.08rem,0.2vw,0.26rem)] z-[5] grid w-fit justify-items-center gap-[0.28rem] text-center transform-gpu will-change-[transform,opacity]",
-              variants: sectionVariants,
-              layout: "position",
-              layoutId: "panel-qr-slot",
-              transition: { layout: { type: "spring", stiffness: 230, damping: 28, mass: 0.74 } },
-            },
+            "div",
+            { className: "tv-panel-bottom-row" },
+            create("img", {
+              src: deymonnazLogoSrc,
+              alt: "Logo de la inmobiliaria",
+              className: "tv-panel-logo",
+              loading: "eager",
+              decoding: "async",
+              draggable: false,
+              referrerPolicy: "no-referrer",
+            }),
             create(
-              "div",
-              { className: "tv-qr-cluster" },
-              create("img", {
-                src: deymonnazLogoSrc,
-                alt: "Logo de la inmobiliaria",
-                className: "tv-company-logo",
-                loading: "eager",
-                decoding: "async",
-                draggable: false,
-                referrerPolicy: "no-referrer",
-              }),
-              create(AnimatedQr, {
-                key: resolvedQrUrl,
-                qrUrl: resolvedQrUrl,
-                propertyName: property.name,
-                reduceMotion: panelComponentReduceMotion,
-                performanceMode,
-              })
-            ),
-            create(
-              "p",
-              { className: "tv-qr-caption w-full text-center text-[clamp(0.5rem,0.75vw,0.72rem)] uppercase tracking-[0.22em] text-cyan-100/75" },
-              "Publicación"
+              motion.div,
+              {
+                className:
+                  "tv-panel-qr-slot tv-qr-slot grid w-fit justify-items-center gap-[0.28rem] text-center transform-gpu will-change-[transform,opacity]",
+                variants: sectionVariants,
+                layout: "position",
+                layoutId: "panel-qr-slot",
+                transition: { layout: { type: "spring", stiffness: 230, damping: 28, mass: 0.74 } },
+              },
+              create(
+                "div",
+                { className: "tv-qr-cluster" },
+                create(AnimatedQr, {
+                  key: resolvedQrUrl,
+                  qrUrl: resolvedQrUrl,
+                  propertyName: property.name,
+                  reduceMotion: panelComponentReduceMotion,
+                  performanceMode,
+                })
+              ),
+              create(
+                "p",
+                { className: "tv-qr-caption w-full text-center text-[clamp(0.5rem,0.75vw,0.72rem)] uppercase tracking-[0.22em] text-cyan-100/75" },
+                "Publicación"
+              )
             )
           )
         )
