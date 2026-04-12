@@ -1,5 +1,5 @@
 import { React, create, motion, useReducedMotion } from "../runtime/react-motion.js";
-import { baseTitle, deymonnazLogoSrc } from "../constants/ui.js";
+import { baseTitle } from "../constants/ui.js";
 import { buildQrUrl, resolveInitialPropertyIndex } from "../shared/catalog.js?v=20260411-03";
 import { DEFAULT_MEDIA_VISUAL, buildPanelVisual, resolveImageVisual } from "../shared/media-visual.js?v=20260411-03";
 import { hasQrImageCached, preloadQrImage } from "../shared/qr.js?v=20260411-03";
@@ -255,24 +255,6 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
           ? { opacity: 1 }
           : { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 90, damping: 18 } },
       },
-      create(
-        motion.div,
-        {
-          className: "tv-logo-fixed transform-gpu will-change-[transform,opacity]",
-          initial: reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 },
-          animate: reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, transition: { duration: 0.22, ease: "easeOut", delay: 0.05 } },
-          layout: "position",
-        },
-        create("img", {
-          src: deymonnazLogoSrc,
-          alt: "Logo de Organización Deymonnaz",
-          className: "tv-logo",
-          loading: "eager",
-          decoding: "async",
-          draggable: false,
-          referrerPolicy: "no-referrer",
-        })
-      ),
       create(
         "div",
         { className: "media-stage-shell" },

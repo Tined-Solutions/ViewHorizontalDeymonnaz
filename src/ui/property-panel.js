@@ -4,6 +4,7 @@ import { hexToRgbString } from "../shared/color.js";
 import { normalizeComparableText, summaryIsRedundant, proceduralDelay } from "../shared/text.js";
 import { buildQrUrl } from "../shared/catalog.js";
 import { buildQrParticleSeeds } from "../shared/qr.js";
+import { deymonnazLogoSrc } from "../constants/ui.js";
 
 function AnimatedBlock({ as = "div", className, children, reduceMotion, delay = 0, y = 14, transition = {}, style = {}, ...rest }) {
   const MotionTag = motion[as] || motion.div;
@@ -955,13 +956,26 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
               layoutId: "panel-qr-slot",
               transition: { layout: { type: "spring", stiffness: 230, damping: 28, mass: 0.74 } },
             },
-            create(AnimatedQr, {
-              key: resolvedQrUrl,
-              qrUrl: resolvedQrUrl,
-              propertyName: property.name,
-              reduceMotion: panelComponentReduceMotion,
-              performanceMode,
-            }),
+            create(
+              "div",
+              { className: "tv-qr-cluster" },
+              create("img", {
+                src: deymonnazLogoSrc,
+                alt: "Logo de la inmobiliaria",
+                className: "tv-company-logo",
+                loading: "eager",
+                decoding: "async",
+                draggable: false,
+                referrerPolicy: "no-referrer",
+              }),
+              create(AnimatedQr, {
+                key: resolvedQrUrl,
+                qrUrl: resolvedQrUrl,
+                propertyName: property.name,
+                reduceMotion: panelComponentReduceMotion,
+                performanceMode,
+              })
+            ),
             create(
               "p",
               { className: "tv-qr-caption w-full text-center text-[clamp(0.5rem,0.75vw,0.72rem)] uppercase tracking-[0.22em] text-cyan-100/75" },

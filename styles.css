@@ -1838,13 +1838,14 @@ html.tv-performance-mode .media-stage__overlay {
   }
 
   .tv-panel-body {
-    position: relative !important;
+    position: static !important;
+    height: 100% !important;
     margin-top: 0 !important;
     gap: clamp(0.32rem, 0.58vw, 0.56rem) !important;
     align-content: start !important;
     min-height: 0 !important;
     padding-right: clamp(7.4rem, 10.2vw, 10.8rem) !important;
-    padding-bottom: clamp(0.7rem, 1.1vw, 1.2rem) !important;
+    padding-bottom: clamp(0.2rem, 0.46vw, 0.56rem) !important;
   }
 
   .tv-panel-content {
@@ -1856,22 +1857,53 @@ html.tv-performance-mode .media-stage__overlay {
     gap: clamp(0.3rem, 0.54vw, 0.52rem) !important;
   }
 
+  .tv-panel-content > :last-child {
+    margin-top: auto !important;
+  }
+
   .tv-panel .tv-features-wrap {
     margin-top: auto !important;
     align-items: center !important;
     min-height: 1.35rem;
   }
 
+  .tv-qr-cluster {
+    --tv-corner-badge-size: clamp(84px, 6.4vw, 126px);
+    display: inline-flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: clamp(0.35rem, 0.7vw, 0.7rem);
+  }
+
+  .tv-company-logo {
+    width: var(--tv-corner-badge-size);
+    height: var(--tv-corner-badge-size);
+    display: block;
+    object-fit: contain;
+    box-sizing: border-box;
+    border-radius: 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(5, 10, 20, 0.48);
+    padding: clamp(0.2rem, 0.33vw, 0.35rem);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  }
+
+  .tv-panel-qr-slot .tv-qr {
+    width: var(--tv-corner-badge-size) !important;
+    height: var(--tv-corner-badge-size) !important;
+  }
+
   .tv-panel-qr-slot {
     position: absolute !important;
     right: clamp(0.42rem, 0.82vw, 0.94rem) !important;
-    bottom: clamp(0.2rem, 0.46vw, 0.56rem) !important;
+    bottom: 0 !important;
     margin-top: 0 !important;
     justify-items: center !important;
     text-align: center !important;
   }
 
   .tv-panel-qr-slot .tv-qr-caption {
+    margin-top: 0.2rem;
     text-align: center !important;
     line-height: 1.1 !important;
   }
