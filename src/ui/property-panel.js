@@ -949,7 +949,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
             motion.div,
             {
               className:
-                "tv-qr-slot absolute right-[clamp(0.6rem,0.95vw,1.15rem)] bottom-[clamp(0.08rem,0.2vw,0.26rem)] z-[5] grid w-fit justify-items-end gap-1 text-right transform-gpu will-change-[transform,opacity]",
+                "tv-qr-slot absolute right-[clamp(0.52rem,0.86vw,1.06rem)] bottom-[clamp(0.08rem,0.2vw,0.26rem)] z-[5] grid w-fit justify-items-end gap-1 text-right transform-gpu will-change-[transform,opacity]",
               variants: sectionVariants,
               layout: "position",
               layoutId: "panel-qr-slot",
