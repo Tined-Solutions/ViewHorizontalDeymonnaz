@@ -1797,6 +1797,89 @@ html.tv-performance-mode .media-stage__overlay {
     max-height: none !important;
     align-self: stretch !important;
     justify-self: stretch !important;
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr) !important;
+    align-content: start !important;
+    gap: clamp(0.38rem, 0.75vw, 0.72rem) !important;
+  }
+
+  .tv-panel-header {
+    margin-top: 0 !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: clamp(0.36rem, 0.72vw, 0.7rem) !important;
+  }
+
+  .tv-panel-identity {
+    display: grid;
+    gap: clamp(0.08rem, 0.24vw, 0.24rem);
+  }
+
+  .tv-panel-price-wrap {
+    justify-items: start !important;
+    text-align: left !important;
+  }
+
+  .tv-panel .tv-title {
+    font-size: clamp(1.16rem, 2.02vw, 2.34rem) !important;
+    line-height: 0.95 !important;
+  }
+
+  .tv-panel .tv-location {
+    margin-top: 0.34rem !important;
+    letter-spacing: 0.16em !important;
+  }
+
+  .tv-panel .tv-price {
+    font-size: clamp(1.1rem, 1.78vw, 2.05rem) !important;
+  }
+
+  .tv-panel-summary {
+    margin-top: 0 !important;
+  }
+
+  .tv-panel-body {
+    position: relative !important;
+    margin-top: 0 !important;
+    gap: clamp(0.32rem, 0.58vw, 0.56rem) !important;
+    align-content: start !important;
+    min-height: 0 !important;
+    padding-right: clamp(7.4rem, 10.2vw, 10.8rem) !important;
+    padding-bottom: clamp(0.7rem, 1.1vw, 1.2rem) !important;
+  }
+
+  .tv-panel-content {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    gap: clamp(0.3rem, 0.54vw, 0.52rem) !important;
+  }
+
+  .tv-panel .tv-features-wrap {
+    margin-top: auto !important;
+    align-items: center !important;
+    min-height: 1.35rem;
+  }
+
+  .tv-panel-qr-slot {
+    position: absolute !important;
+    right: clamp(0.42rem, 0.82vw, 0.94rem) !important;
+    bottom: clamp(0.2rem, 0.46vw, 0.56rem) !important;
+    margin-top: 0 !important;
+    justify-items: center !important;
+    text-align: center !important;
+  }
+
+  .tv-panel-qr-slot .tv-qr-caption {
+    text-align: center !important;
+    line-height: 1.1 !important;
+  }
+
+  .tv-panel .tv-metrics-grid,
+  .tv-panel .tv-details-grid,
+  .tv-panel .tv-features-wrap {
+    gap: 0.42rem !important;
   }
 
   .media-stage-shell {

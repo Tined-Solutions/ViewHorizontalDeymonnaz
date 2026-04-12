@@ -841,11 +841,11 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
         { id: "property-panel-layout" },
         create(
           motion.div,
-          { className: "mt-[clamp(0.52rem,0.9vmin,1.2rem)] grid gap-3 grid-cols-[minmax(0,1fr)_auto] items-start transform-gpu will-change-[transform,opacity] xl:gap-4 2xl:gap-5", variants: sectionVariants, layout: "position" },
+          { className: "tv-panel-header mt-[clamp(0.52rem,0.9vmin,1.2rem)] grid gap-3 grid-cols-[minmax(0,1fr)_auto] items-start transform-gpu will-change-[transform,opacity] xl:gap-4 2xl:gap-5", variants: sectionVariants, layout: "position" },
           create(
             motion.div,
             {
-              className: "min-w-0 transform-gpu will-change-[transform,opacity]",
+              className: "tv-panel-identity min-w-0 transform-gpu will-change-[transform,opacity]",
               variants: sectionVariants,
               layout: "position",
             },
@@ -856,7 +856,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
           create(
             motion.div,
             {
-              className: "grid justify-items-end gap-1 text-right transform-gpu will-change-[transform,opacity]",
+              className: "tv-panel-price-wrap grid justify-items-end gap-1 text-right transform-gpu will-change-[transform,opacity]",
               variants: sectionVariants,
               layout: "position",
               layoutId: "panel-price",
@@ -885,19 +885,19 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
           )
         ),
         summaryText
-          ? create(AnimatedBlock, { as: "p", className: "tv-summary mt-2 text-[clamp(0.8rem,1.05vw,1.08rem)] leading-relaxed text-slate-100/85", reduceMotion: panelComponentReduceMotion, delay: panelIntroBaseDelay + 0.06, y: 7, layout: "position" }, summaryText)
+          ? create(AnimatedBlock, { as: "p", className: "tv-panel-summary tv-summary mt-2 text-[clamp(0.8rem,1.05vw,1.08rem)] leading-relaxed text-slate-100/85", reduceMotion: panelComponentReduceMotion, delay: panelIntroBaseDelay + 0.06, y: 7, layout: "position" }, summaryText)
           : null,
         create(
           motion.div,
           {
             className:
-              "relative mt-2.5 grid gap-2 transform-gpu will-change-[transform,opacity] pr-[clamp(7rem,10vmin,12.5rem)] pb-[clamp(0.22rem,0.45vmin,0.62rem)] sm:pr-[clamp(7.6rem,10vmin,13.25rem)] sm:pb-[clamp(0.24rem,0.5vmin,0.68rem)] lg:pr-[clamp(8.4rem,10.5vmin,14rem)] lg:pb-[clamp(0.28rem,0.58vmin,0.76rem)]",
+              "tv-panel-body relative mt-2.5 grid gap-2 transform-gpu will-change-[transform,opacity] pr-[clamp(7rem,10vmin,12.5rem)] pb-[clamp(0.22rem,0.45vmin,0.62rem)] sm:pr-[clamp(7.6rem,10vmin,13.25rem)] sm:pb-[clamp(0.24rem,0.5vmin,0.68rem)] lg:pr-[clamp(8.4rem,10.5vmin,14rem)] lg:pb-[clamp(0.28rem,0.58vmin,0.76rem)]",
             variants: sectionVariants,
             layout: "position",
           },
           create(
             motion.div,
-            { className: "grid min-w-0 gap-2 transform-gpu will-change-[transform,opacity]", variants: sectionVariants, layout: "position" },
+            { className: "tv-panel-content grid min-w-0 gap-2 transform-gpu will-change-[transform,opacity]", variants: sectionVariants, layout: "position" },
             primaryMetrics.length
               ? create(
                   motion.div,
@@ -949,7 +949,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
             motion.div,
             {
               className:
-                "tv-qr-slot absolute right-[clamp(0.52rem,0.86vw,1.06rem)] bottom-[clamp(0.08rem,0.2vw,0.26rem)] z-[5] grid w-fit justify-items-center gap-[0.28rem] text-center transform-gpu will-change-[transform,opacity]",
+                "tv-panel-qr-slot tv-qr-slot absolute right-[clamp(0.52rem,0.86vw,1.06rem)] bottom-[clamp(0.08rem,0.2vw,0.26rem)] z-[5] grid w-fit justify-items-center gap-[0.28rem] text-center transform-gpu will-change-[transform,opacity]",
               variants: sectionVariants,
               layout: "position",
               layoutId: "panel-qr-slot",
