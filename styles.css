@@ -976,12 +976,18 @@ body {
 .tv-qr-cluster {
   --tv-corner-badge-size: clamp(112px, 8.2vw, 172px);
   display: inline-flex;
-  align-items: flex-end;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+  width: var(--tv-corner-badge-size);
   gap: 0;
 }
 
 .tv-panel-logo {
+  position: absolute !important;
+  left: clamp(0.42rem, 0.82vw, 0.94rem);
+  bottom: 0;
+  z-index: 6;
+  margin: 0 !important;
   width: clamp(156px, 11.2vw, 248px);
   height: auto;
   max-height: clamp(112px, 8.2vw, 172px);
@@ -1001,6 +1007,10 @@ body {
   bottom: auto !important;
   align-self: flex-end !important;
   margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
   gap: 0.14rem !important;
   justify-items: center !important;
   text-align: center !important;
@@ -1009,9 +1019,13 @@ body {
 .tv-panel-qr-slot .tv-qr {
   width: var(--tv-corner-badge-size) !important;
   height: var(--tv-corner-badge-size) !important;
+  box-sizing: border-box !important;
 }
 
 .tv-panel-qr-slot .tv-qr-caption {
+  display: block;
+  width: var(--tv-corner-badge-size) !important;
+  margin-inline: auto !important;
   margin: 0 !important;
   padding: 0 !important;
   line-height: 1.02 !important;

@@ -981,7 +981,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
               ),
               create(
                 "p",
-                { className: "tv-qr-caption w-full text-center text-[clamp(0.5rem,0.75vw,0.72rem)] uppercase tracking-[0.22em] text-cyan-100/75" },
+                { className: "tv-qr-caption text-center text-[clamp(0.5rem,0.75vw,0.72rem)] uppercase tracking-[0.22em] text-cyan-100/75" },
                 "Publicación"
               )
             )
