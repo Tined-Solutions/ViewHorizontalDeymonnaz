@@ -71,7 +71,7 @@ function isVerticalPublicationTarget(value) {
       return false;
     }
 
-    if (normalized === "vertical" || normalized === "ambos") {
+    if (normalized === "horizontal" || normalized === "ambos") {
       return true;
     }
 
@@ -81,7 +81,7 @@ function isVerticalPublicationTarget(value) {
       .map((segment) => normalizeFieldToken(segment))
       .filter(Boolean);
 
-    return segments.includes("vertical") || segments.includes("ambos");
+    return segments.includes("horizontal") || segments.includes("ambos");
   }
 
 function isPublishedForVertical(doc) {

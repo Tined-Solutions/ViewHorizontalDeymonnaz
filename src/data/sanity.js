@@ -147,7 +147,7 @@
       return false;
     }
 
-    if (normalized === "vertical" || normalized === "ambos") {
+    if (normalized === "horizontal" || normalized === "ambos") {
       return true;
     }
 
@@ -157,7 +157,7 @@
       .map((segment) => normalizeFieldToken(segment))
       .filter(Boolean);
 
-    return segments.includes("vertical") || segments.includes("ambos");
+    return segments.includes("horizontal") || segments.includes("ambos");
   }
 
   function isPublishedForVertical(doc) {
@@ -1513,8 +1513,8 @@
   }
 
   function resolveAllowedPublicationTargets(config) {
-    const defaults = ["vertical", "ambos"];
-    const configuredTargets = toArray(config.verticalPublicationTargets ?? config.allowedPublicationTargets ?? config.allowedPublishTargets);
+    const defaults = ["horizontal", "ambos"];
+    const configuredTargets = toArray(config.horizontalPublicationTargets ?? config.verticalPublicationTargets ?? config.allowedPublicationTargets ?? config.allowedPublishTargets);
     const normalizedTargets = configuredTargets.map((value) => normalizeFieldToken(value)).filter(Boolean);
     const targets = normalizedTargets.length > 0 ? normalizedTargets : defaults;
     return new Set(targets);
@@ -1591,6 +1591,11 @@
       .map((entry) => normalizeFieldToken(entry))
       .filter(Boolean)
       .forEach((token) => {
+        if (token.includes("horizontal")) {
+          targets.push("horizontal");
+          return;
+        }
+
         if (token.includes("vertical")) {
           targets.push("vertical");
           return;
