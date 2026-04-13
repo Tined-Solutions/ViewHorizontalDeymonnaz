@@ -604,8 +604,8 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
   const panelComponentReduceMotion = reduceMotion || performanceMode;
   const panelIntroBaseDelay = panelComponentReduceMotion ? 0 : 0.06;
   const panelClassName = performanceMode
-    ? "tv-panel absolute inset-x-0 bottom-0 z-40 overflow-hidden rounded-2xl bg-transparent px-3 pt-3 pb-0.5 shadow-[0_8px_18px_rgba(0,0,0,0.16)] backdrop-blur-[4px] sm:px-4 sm:pt-4 sm:pb-0.5 lg:px-5 lg:pt-5 lg:pb-1 xl:px-6 xl:pt-6 xl:pb-1.5 2xl:px-7 2xl:pt-7 2xl:pb-2"
-    : "tv-panel absolute inset-x-0 bottom-0 z-40 overflow-hidden rounded-2xl bg-transparent px-3 pt-3 pb-0.5 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-[2px] sm:px-4 sm:pt-4 sm:pb-0.5 lg:px-5 lg:pt-5 lg:pb-1 xl:px-6 xl:pt-6 xl:pb-1.5 2xl:px-7 2xl:pt-7 2xl:pb-2";
+    ? "tv-panel absolute inset-x-0 bottom-0 z-40 flex min-h-0 flex-col overflow-hidden rounded-2xl bg-transparent px-3 pt-3 pb-0.5 shadow-[0_8px_18px_rgba(0,0,0,0.16)] backdrop-blur-[4px] sm:px-4 sm:pt-4 sm:pb-0.5 lg:px-5 lg:pt-5 lg:pb-1 xl:px-6 xl:pt-6 xl:pb-1.5 2xl:px-7 2xl:pt-7 2xl:pb-2"
+    : "tv-panel absolute inset-x-0 bottom-0 z-40 flex min-h-0 flex-col overflow-hidden rounded-2xl bg-transparent px-3 pt-3 pb-0.5 shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-[2px] sm:px-4 sm:pt-4 sm:pb-0.5 lg:px-5 lg:pt-5 lg:pb-1 xl:px-6 xl:pt-6 xl:pb-1.5 2xl:px-7 2xl:pt-7 2xl:pb-2";
 
   const kickerValues = [property.type, property.badge]
     .map((value) => String(value ?? "").trim())
@@ -892,13 +892,13 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
           motion.div,
           {
             className:
-              "tv-panel-body relative mt-2.5 grid gap-2 transform-gpu will-change-[transform,opacity] pr-[clamp(7rem,10vmin,12.5rem)] pb-[clamp(0.22rem,0.45vmin,0.62rem)] sm:pr-[clamp(7.6rem,10vmin,13.25rem)] sm:pb-[clamp(0.24rem,0.5vmin,0.68rem)] lg:pr-[clamp(8.4rem,10.5vmin,14rem)] lg:pb-[clamp(0.28rem,0.58vmin,0.76rem)]",
+              "tv-panel-body relative mt-2.5 flex min-h-0 flex-1 flex-col gap-2 transform-gpu will-change-[transform,opacity] pr-[clamp(7rem,10vmin,12.5rem)] pb-[clamp(0.22rem,0.45vmin,0.62rem)] sm:pr-[clamp(7.6rem,10vmin,13.25rem)] sm:pb-[clamp(0.24rem,0.5vmin,0.68rem)] lg:pr-[clamp(8.4rem,10.5vmin,14rem)] lg:pb-[clamp(0.28rem,0.58vmin,0.76rem)]",
             variants: sectionVariants,
             layout: "position",
           },
           create(
             motion.div,
-            { className: "tv-panel-content grid min-w-0 gap-2 transform-gpu will-change-[transform,opacity]", variants: sectionVariants, layout: "position" },
+            { className: "tv-panel-content flex min-w-0 flex-1 flex-col gap-2 transform-gpu will-change-[transform,opacity]", variants: sectionVariants, layout: "position" },
             primaryMetrics.length
               ? create(
                   motion.div,
@@ -948,7 +948,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
           ),
           create(
             "div",
-            { className: "tv-panel-bottom-row" },
+            { className: "tv-panel-bottom-row mt-auto" },
             create("img", {
               src: deymonnazLogoSrc,
               alt: "Logo de la inmobiliaria",
@@ -981,7 +981,7 @@ export function PropertyPanel({ property, siteBaseUrl, qrUrl, utils, reduceMotio
               ),
               create(
                 "p",
-                { className: "tv-qr-caption text-center text-[clamp(0.5rem,0.75vw,0.72rem)] uppercase tracking-[0.22em] text-cyan-100/75" },
+                { className: "tv-qr-caption w-full text-center text-[clamp(0.5rem,0.75vw,0.72rem)] uppercase tracking-[0.22em] text-cyan-100/75" },
                 "Publicación"
               )
             )

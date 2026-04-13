@@ -841,9 +841,15 @@ body {
 
 .tv-panel {
   --tv-panel-side-inset: clamp(1.4rem, 3.1vw, 4.2rem);
+  --tv-panel-stack-gap: clamp(0.38rem, 0.7vw, 0.72rem);
+  --tv-panel-body-gap: clamp(0.3rem, 0.58vw, 0.58rem);
+  --tv-panel-content-gap: clamp(0.24rem, 0.5vw, 0.5rem);
   left: calc(50% - 50vw + var(--tv-panel-side-inset));
   right: calc(50% - 50vw + var(--tv-panel-side-inset));
   bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tv-panel-stack-gap);
   background: linear-gradient(180deg, var(--tv-panel-gradient-top, var(--surface-0)), var(--tv-panel-gradient-bottom, var(--surface-2)));
   border: 1px solid var(--surface-border);
   box-shadow:
@@ -942,6 +948,8 @@ body {
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
+  gap: var(--tv-panel-body-gap) !important;
+  flex: 1 1 auto !important;
   height: 100% !important;
   min-height: 0 !important;
   padding-right: 0 !important;
@@ -951,11 +959,12 @@ body {
 .tv-panel-content {
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
+  align-content: flex-start !important;
   flex: 1 1 auto !important;
   height: auto !important;
   min-height: 0 !important;
-  gap: clamp(0.24rem, 0.48vw, 0.44rem) !important;
+  gap: var(--tv-panel-content-gap) !important;
 }
 
 .tv-panel-content > :last-child {
@@ -967,7 +976,7 @@ body {
   align-items: flex-end;
   justify-content: space-between;
   width: 100%;
-  margin-top: 0;
+  margin-top: auto;
   margin-bottom: 0;
   padding-bottom: 0;
   gap: clamp(0.35rem, 0.7vw, 0.7rem);
@@ -976,22 +985,20 @@ body {
 .tv-qr-cluster {
   --tv-corner-badge-size: clamp(112px, 8.2vw, 172px);
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--tv-corner-badge-size);
+  align-items: flex-end;
+  justify-content: flex-end;
   gap: 0;
 }
 
 .tv-panel-logo {
-  position: absolute !important;
-  left: clamp(0.42rem, 0.82vw, 0.94rem);
-  bottom: 0;
-  z-index: 6;
-  margin: 0 !important;
   width: clamp(156px, 11.2vw, 248px);
   height: auto;
   max-height: clamp(112px, 8.2vw, 172px);
   display: block;
+  position: fixed;
+  left: clamp(0.7rem, 1.5vw, 1.6rem);
+  bottom: clamp(0.7rem, 1.5vw, 1.5rem);
+  z-index: 52;
   object-fit: contain;
   box-sizing: border-box;
   border-radius: 0.7rem;
@@ -1007,10 +1014,7 @@ body {
   bottom: auto !important;
   align-self: flex-end !important;
   margin: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
+  margin-left: auto !important;
   gap: 0.14rem !important;
   justify-items: center !important;
   text-align: center !important;
@@ -1019,13 +1023,9 @@ body {
 .tv-panel-qr-slot .tv-qr {
   width: var(--tv-corner-badge-size) !important;
   height: var(--tv-corner-badge-size) !important;
-  box-sizing: border-box !important;
 }
 
 .tv-panel-qr-slot .tv-qr-caption {
-  display: block;
-  width: var(--tv-corner-badge-size) !important;
-  margin-inline: auto !important;
   margin: 0 !important;
   padding: 0 !important;
   line-height: 1.02 !important;
@@ -1795,6 +1795,9 @@ html.tv-performance-mode .media-stage__overlay {
   }
 
   .tv-panel {
+    --tv-panel-stack-gap: clamp(0.65rem, 0.8vmin, 1.05rem);
+    --tv-panel-body-gap: clamp(0.45rem, 0.58vmin, 0.72rem);
+    --tv-panel-content-gap: clamp(0.4rem, 0.54vmin, 0.68rem);
     left: calc(50% - 50vw + var(--tv-panel-side-inset)) !important;
     right: calc(50% - 50vw + var(--tv-panel-side-inset)) !important;
     bottom: 0 !important;
@@ -1804,7 +1807,7 @@ html.tv-performance-mode .media-stage__overlay {
     padding-bottom: 0 !important;
     border-radius: clamp(1.7rem, 1.9vmin, 2.35rem) !important;
     max-height: min(46vh, 980px) !important;
-    gap: clamp(0.65rem, 0.8vmin, 1.05rem) !important;
+    gap: var(--tv-panel-stack-gap) !important;
     border: none !important;
   }
 
@@ -1872,7 +1875,7 @@ html.tv-performance-mode .media-stage__overlay {
   }
 
   .tv-panel-bottom-row {
-    margin-top: 0 !important;
+    margin-top: auto !important;
     padding-bottom: 0 !important;
   }
 
@@ -1937,6 +1940,9 @@ html.tv-performance-mode .media-stage__overlay {
 
 @media (orientation: landscape) {
   .tv-panel {
+    --tv-panel-stack-gap: clamp(0.38rem, 0.75vw, 0.72rem);
+    --tv-panel-body-gap: clamp(0.32rem, 0.58vw, 0.56rem);
+    --tv-panel-content-gap: clamp(0.3rem, 0.54vw, 0.52rem);
     position: relative !important;
     grid-column: 2 !important;
     grid-row: 1 !important;
@@ -1946,13 +1952,13 @@ html.tv-performance-mode .media-stage__overlay {
     bottom: auto !important;
     width: 100% !important;
     height: 100% !important;
+    min-height: 100% !important;
     max-height: none !important;
     align-self: stretch !important;
     justify-self: stretch !important;
-    display: grid !important;
-    grid-template-rows: auto auto minmax(0, 1fr) !important;
-    align-content: start !important;
-    gap: clamp(0.38rem, 0.75vw, 0.72rem) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--tv-panel-stack-gap) !important;
     padding-bottom: 0 !important;
   }
 
@@ -1994,9 +2000,11 @@ html.tv-performance-mode .media-stage__overlay {
     position: static !important;
     display: flex !important;
     flex-direction: column !important;
+    justify-content: space-between !important;
     height: 100% !important;
+    flex: 1 1 auto !important;
     margin-top: 0 !important;
-    gap: clamp(0.32rem, 0.58vw, 0.56rem) !important;
+    gap: var(--tv-panel-body-gap) !important;
     align-content: start !important;
     min-height: 0 !important;
     padding-right: 0 !important;
@@ -2007,10 +2015,11 @@ html.tv-performance-mode .media-stage__overlay {
     display: flex !important;
     flex-direction: column !important;
     justify-content: flex-start !important;
+    align-content: flex-start !important;
     flex: 1 1 auto !important;
     height: auto !important;
     min-height: 0 !important;
-    gap: clamp(0.3rem, 0.54vw, 0.52rem) !important;
+    gap: var(--tv-panel-content-gap) !important;
   }
 
   .tv-panel-content > :last-child {
@@ -2036,7 +2045,7 @@ html.tv-performance-mode .media-stage__overlay {
     align-items: flex-end;
     justify-content: space-between;
     width: 100%;
-    margin-top: 0;
+    margin-top: auto;
     margin-bottom: 0 !important;
     padding-bottom: 0 !important;
     gap: clamp(0.35rem, 0.7vw, 0.7rem);
@@ -2065,7 +2074,8 @@ html.tv-performance-mode .media-stage__overlay {
     position: static !important;
     right: auto !important;
     bottom: auto !important;
-    align-self: auto !important;
+    align-self: flex-end !important;
+    margin-left: auto !important;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
     gap: 0.14rem !important;
