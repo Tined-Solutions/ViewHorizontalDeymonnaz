@@ -11,6 +11,32 @@ export function buildSettingsQuery() {
     }`;
   }
 
+export function buildDashboardConfigQuery() {
+    return `*[_type == "configuracionDashboard" && _id == "configuracion-dashboard"][0]{
+      _id,
+      estiloColor,
+      radioActiva,
+      radioSeleccionada,
+      radioUrl1,
+      radioUrl2,
+      radioUrl3,
+      "radioUrlActiva": select(
+        radioSeleccionada == "radio_1" => radioUrl1,
+        radioSeleccionada == "radio_2" => radioUrl2,
+        radioSeleccionada == "radio_3" => radioUrl3,
+        null
+      )
+    }`;
+  }
+
+export function buildCatalogQuery() {
+    return `{
+      "settingsDocument": ${buildSettingsQuery()},
+      "dashboardSettingsDocument": ${buildDashboardConfigQuery()},
+      "propertyDocuments": ${buildPropertiesQuery()}
+    }`;
+  }
+
 export function buildPropertiesQuery() {
     return `*[_type in $propertyTypes && active != false] | order(coalesce(sortOrder, sort_order, order, rank, 0) asc, coalesce(name, title, titulo, slug.current, _id) asc) {
       ...,

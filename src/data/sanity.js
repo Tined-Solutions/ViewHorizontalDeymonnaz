@@ -1,37 +1,29 @@
 (function () {
   const namespace = (window.InmoCatalogSource = window.InmoCatalogSource || {});
   const defaultTheme = {
-    primary: "#128a70",
-    secondary: "#6ecfb1",
-    tertiary: "#d1f7ea",
-    glow: "#f7fffb",
-    panelGradientTop: "rgba(4, 34, 27, 0.7)",
-    panelGradientBottom: "rgba(2, 16, 13, 0.61)",
+    primary: "#7dd3fc",
+    secondary: "#dbeafe",
+    tertiary: "#60a5fa",
+    glow: "#f8fafc",
   };
   const fallbackVisualThemePresets = {
     tema1: {
-      primary: "#128a70",
-      secondary: "#6ecfb1",
-      tertiary: "#d1f7ea",
-      glow: "#f7fffb",
-      panelGradientTop: "rgba(4, 34, 27, 0.7)",
-      panelGradientBottom: "rgba(2, 16, 13, 0.61)",
+      primary: "#04ebad",
+      secondary: "#ddd4c6",
+      tertiary: "#b9a78e",
+      glow: "#f3eee4",
     },
     tema2: {
-      primary: "#5d6670",
-      secondary: "#737c86",
-      tertiary: "#8f98a3",
-      glow: "#bcc3ca",
-      panelGradientTop: "rgba(22, 25, 30, 0.69)",
-      panelGradientBottom: "rgba(13, 16, 19, 0.59)",
+      primary: "#af740e",
+      secondary: "#92de10",
+      tertiary: "#cfcfcf",
+      glow: "#f7daac",
     },
     tema3: {
-      primary: "#173b5d",
-      secondary: "#235784",
-      tertiary: "#387ab0",
-      glow: "#c9ddf5",
-      panelGradientTop: "rgba(10, 16, 28, 0.69)",
-      panelGradientBottom: "rgba(6, 10, 18, 0.59)",
+      primary: "#00ffb7",
+      secondary: "#9f8b73",
+      tertiary: "#3f4548",
+      glow: "#d8cdbc",
     },
   };
 
@@ -87,122 +79,6 @@
     }
 
     return true;
-  }
-
-  function collectPublicationTargets(value, targets, seen = new Set()) {
-    if (!hasValue(value)) {
-      return;
-    }
-
-    if (value && typeof value === "object") {
-      if (seen.has(value)) {
-        return;
-      }
-
-      seen.add(value);
-    }
-
-    if (Array.isArray(value)) {
-      value.forEach((entry) => collectPublicationTargets(entry, targets, seen));
-      return;
-    }
-
-    if (typeof value === "object") {
-      const keys = [
-        "value",
-        "label",
-        "title",
-        "name",
-        "current",
-        "publicarEn",
-        "publicacion",
-        "canal",
-        "canalPublicacion",
-        "publicationChannel",
-        "publicationTarget",
-      ];
-
-      keys.forEach((key) => {
-        const nested = readField(value, key);
-
-        if (hasValue(nested)) {
-          collectPublicationTargets(nested, targets, seen);
-        }
-      });
-
-      return;
-    }
-
-    const text = toText(value);
-
-    if (text) {
-      targets.push(text);
-    }
-  }
-
-  function isVerticalPublicationTarget(value) {
-    const normalized = normalizeFieldToken(value);
-
-    if (!normalized) {
-      return false;
-    }
-
-    if (normalized === "horizontal" || normalized === "ambos") {
-      return true;
-    }
-
-    const segments = toText(value)
-      .toLowerCase()
-      .split(/[,;/|+&]|\by\b|\band\b/)
-      .map((segment) => normalizeFieldToken(segment))
-      .filter(Boolean);
-
-    return segments.includes("horizontal") || segments.includes("ambos");
-  }
-
-  function isPublishedForVertical(doc) {
-    const publishInValue = pickField(
-      doc,
-      [
-        "Difusion.Publicar en",
-        "Difusion.publicarEn",
-        "Difusion.canalPublicacion",
-        "Difusion.publicationChannel",
-        "Difusion.publicationTarget",
-        "difusion.Publicar en",
-        "difusion.publicarEn",
-        "difusion.publicar_en",
-        "difusion.publicacion",
-        "difusion.canal",
-        "difusion.canalPublicacion",
-        "difusion.publicationChannel",
-        "difusion.publicationTarget",
-        "diffusion.publishIn",
-        "diffusion.publicationChannel",
-        "diffusion.publicationTarget",
-        "Publicar en",
-        "publicar en",
-        "publicarEn",
-        "publicar_en",
-        "sitioPublicacion",
-        "sitio_publicacion",
-        "sitioDePublicacion",
-        "publicacion",
-        "canalPublicacion",
-        "publicationChannel",
-        "publicationTarget",
-      ],
-      undefined
-    );
-
-    if (!hasValue(publishInValue)) {
-      return false;
-    }
-
-    const targets = [];
-    collectPublicationTargets(publishInValue, targets);
-
-    return targets.some((target) => isVerticalPublicationTarget(target));
   }
 
   function parseNumber(value) {
@@ -377,11 +253,6 @@
     return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(text) ? text : fallback;
   }
 
-  function normalizeThemeGradient(value, fallback) {
-    const text = toText(value);
-    return text || fallback;
-  }
-
   function slugify(value) {
     return toText(value)
       .toLowerCase()
@@ -475,32 +346,20 @@
 
     try {
       const url = new URL(safeSrc);
-      const format = toText(config.imageFormat || "auto").toLowerCase();
-      const performanceMode = config.tvPerformanceMode !== false;
+      const format = toText(config.imageFormat || "webp").toLowerCase();
 
-      if (format === "original" || format === "none") {
-        url.searchParams.delete("auto");
-        url.searchParams.delete("fm");
-      } else if (format === "webp" || format === "auto" || format === "format") {
-        url.searchParams.delete("fm");
-        url.searchParams.set("auto", "format");
-      } else {
-        url.searchParams.delete("auto");
-        url.searchParams.set("fm", format);
+      if (format === "webp") {
+        url.searchParams.set("fm", "webp");
       }
 
-      const quality = performanceMode ? clampNumber(Math.min(toPositiveInteger(config.imageQuality, 68), 66), 45, 72) : clampNumber(toPositiveInteger(config.imageQuality, 72), 45, 90);
-      const maxWidth = performanceMode ? clampNumber(Math.min(toPositiveInteger(config.imageMaxWidth, 1920), 1600), 640, 1920) : clampNumber(toPositiveInteger(config.imageMaxWidth, 2160), 640, 4096);
-      const maxHeight = performanceMode ? clampNumber(Math.min(toPositiveInteger(config.imageMaxHeight, 3200), 2880), 640, 3200) : clampNumber(toPositiveInteger(config.imageMaxHeight, 3840), 640, 4096);
+      const quality = clampNumber(toPositiveInteger(config.imageQuality, 72), 45, 90);
+      const maxWidth = clampNumber(toPositiveInteger(config.imageMaxWidth, 2160), 640, 4096);
+      const maxHeight = clampNumber(toPositiveInteger(config.imageMaxHeight, 3840), 640, 4096);
 
       url.searchParams.set("fit", "max");
       url.searchParams.set("q", String(quality));
       url.searchParams.set("w", String(maxWidth));
       url.searchParams.set("h", String(maxHeight));
-
-      if (performanceMode) {
-        url.searchParams.set("dpr", "1");
-      }
 
       return url.toString();
     } catch {
@@ -509,89 +368,13 @@
   }
 
   function normalizeTheme(theme, fallback = defaultTheme) {
-    if (typeof theme === "string") {
-      const presetKey = resolveVisualPresetKey(theme);
-      const presetTheme = getVisualThemePresets()[presetKey] || fallback;
-
-      return {
-        primary: sanitizeHexColor(presetTheme.primary, fallback.primary),
-        secondary: sanitizeHexColor(presetTheme.secondary, fallback.secondary),
-        tertiary: sanitizeHexColor(presetTheme.tertiary, fallback.tertiary),
-        glow: sanitizeHexColor(presetTheme.glow, fallback.glow),
-        panelGradientTop: normalizeThemeGradient(
-          presetTheme.panelGradientTop ?? presetTheme.panel_gradient_top ?? presetTheme.panelGradient?.top,
-          fallback.panelGradientTop
-        ),
-        panelGradientBottom: normalizeThemeGradient(
-          presetTheme.panelGradientBottom ?? presetTheme.panel_gradient_bottom ?? presetTheme.panelGradient?.bottom,
-          fallback.panelGradientBottom
-        ),
-      };
-    }
-
     const source = theme && typeof theme === "object" ? theme : {};
-    const hasDirectPalette =
-      hasValue(source.primary) ||
-      hasValue(source.secondary) ||
-      hasValue(source.tertiary) ||
-      hasValue(source.glow) ||
-      hasValue(source.theme_primary) ||
-      hasValue(source.theme_secondary) ||
-      hasValue(source.theme_tertiary) ||
-      hasValue(source.theme_glow);
-
-    if (!hasDirectPalette) {
-      const tokenFromObject = normalizeFieldToken(
-        pickField(source, [
-          "value",
-          "name",
-          "title",
-          "label",
-          "slug.current",
-          "slug",
-          "key",
-          "id",
-          "themePreset",
-          "themeMode",
-          "configuracionVisual",
-          "tema",
-        ])
-      );
-
-      if (tokenFromObject) {
-        const presetKey = resolveVisualPresetKey(tokenFromObject);
-        const presetTheme = getVisualThemePresets()[presetKey] || fallback;
-
-        return {
-          primary: sanitizeHexColor(presetTheme.primary, fallback.primary),
-          secondary: sanitizeHexColor(presetTheme.secondary, fallback.secondary),
-          tertiary: sanitizeHexColor(presetTheme.tertiary, fallback.tertiary),
-          glow: sanitizeHexColor(presetTheme.glow, fallback.glow),
-          panelGradientTop: normalizeThemeGradient(
-            source.panelGradientTop ?? source.panel_gradient_top ?? source.panelGradient?.top ?? presetTheme.panelGradientTop ?? presetTheme.panel_gradient_top ?? presetTheme.panelGradient?.top,
-            fallback.panelGradientTop
-          ),
-          panelGradientBottom: normalizeThemeGradient(
-            source.panelGradientBottom ?? source.panel_gradient_bottom ?? source.panelGradient?.bottom ?? presetTheme.panelGradientBottom ?? presetTheme.panel_gradient_bottom ?? presetTheme.panelGradient?.bottom,
-            fallback.panelGradientBottom
-          ),
-        };
-      }
-    }
 
     return {
       primary: sanitizeHexColor(source.primary ?? source.theme_primary ?? source.themePrimary ?? source.color, fallback.primary),
       secondary: sanitizeHexColor(source.secondary ?? source.theme_secondary ?? source.themeSecondary, fallback.secondary),
       tertiary: sanitizeHexColor(source.tertiary ?? source.theme_tertiary ?? source.themeTertiary, fallback.tertiary),
       glow: sanitizeHexColor(source.glow ?? source.theme_glow ?? source.themeGlow, fallback.glow),
-      panelGradientTop: normalizeThemeGradient(
-        source.panelGradientTop ?? source.panel_gradient_top ?? source.panelGradient?.top ?? source.gradientTop ?? source.gradient_top,
-        fallback.panelGradientTop
-      ),
-      panelGradientBottom: normalizeThemeGradient(
-        source.panelGradientBottom ?? source.panel_gradient_bottom ?? source.panelGradient?.bottom ?? source.gradientBottom ?? source.gradient_bottom,
-        fallback.panelGradientBottom
-      ),
     };
   }
 
@@ -602,15 +385,15 @@
       return "tema1";
     }
 
-    if (["tema1", "preset1", "estilo1", "opcion1", "1", "default", "clasico", "classic", "verde", "green", "emerald", "teal", "turquesa", "turquoise", "jade", "mint", "forest", "moss", "natural"].includes(normalized)) {
+    if (["tema1", "preset1", "estilo1", "opcion1", "1", "default", "clasico", "classic", "azul", "blue", "oceano", "ocean", "claro", "light"].includes(normalized)) {
       return "tema1";
     }
 
-    if (["tema2", "preset2", "estilo2", "opcion2", "2", "neutro", "neutral", "gris", "gray", "slate", "metal", "metalico", "grismetalico", "graphite", "graphito", "gunmetal", "steel", "plata", "silver"].includes(normalized)) {
+    if (["tema2", "preset2", "estilo2", "opcion2", "2", "neutro", "neutral", "gris", "gray", "slate"].includes(normalized)) {
       return "tema2";
     }
 
-    if (["tema3", "preset3", "estilo3", "opcion3", "3", "intenso", "intense", "vibrante", "vibrant", "bold", "alto", "azul", "blue", "oceano", "ocean", "azuloscuro", "darkblue", "navy", "midnight", "deepblue", "oceanooscuro"].includes(normalized)) {
+    if (["tema3", "preset3", "estilo3", "opcion3", "3", "intenso", "intense", "vibrante", "vibrant", "bold", "alto"].includes(normalized)) {
       return "tema3";
     }
 
@@ -663,31 +446,15 @@
       selectionValue && typeof selectionValue === "object"
         ? normalizeFieldToken(pickField(selectionValue, ["value", "name", "title", "label", "slug.current", "slug", "key", "id"]))
         : normalizeFieldToken(selectionValue);
-    const themeTokenFromSource =
-      typeof source.theme === "string"
-        ? normalizeFieldToken(source.theme)
-        : source.theme && typeof source.theme === "object"
-          ? normalizeFieldToken(pickField(source.theme, ["value", "name", "title", "label", "slug.current", "slug", "key", "id", "themePreset", "themeMode", "configuracionVisual", "tema"]))
-          : "";
-    const resolvedSelectionToken = selectionToken || themeTokenFromSource;
 
     const hasLegacyTheme =
-      (source.theme &&
-        typeof source.theme === "object" &&
-        (hasValue(source.theme.primary) ||
-          hasValue(source.theme.secondary) ||
-          hasValue(source.theme.tertiary) ||
-          hasValue(source.theme.glow) ||
-          hasValue(source.theme.theme_primary) ||
-          hasValue(source.theme.theme_secondary) ||
-          hasValue(source.theme.theme_tertiary) ||
-          hasValue(source.theme.theme_glow))) ||
+      hasValue(source.theme) ||
       hasValue(source.theme_primary) ||
       hasValue(source.theme_secondary) ||
       hasValue(source.theme_tertiary) ||
       hasValue(source.theme_glow);
 
-    if (!resolvedSelectionToken && hasLegacyTheme) {
+    if (!selectionToken && hasLegacyTheme) {
       return {
         ...normalizeTheme(
           source.theme || {
@@ -725,22 +492,17 @@
       }
     }
 
-    if (!resolvedSelectionToken) {
+    if (!selectionToken) {
       return null;
     }
 
-    const presetKey = resolveVisualPresetKey(resolvedSelectionToken);
+    const presetKey = resolveVisualPresetKey(selectionToken);
     const presetTheme = getVisualThemePresets()[presetKey] || defaultTheme;
-    const presetValueSource = hasValue(selectionValue)
-      ? selectionValue
-      : typeof source.theme === "string"
-        ? source.theme
-        : resolvedSelectionToken;
 
     return {
       ...normalizeTheme(presetTheme, fallbackTheme),
       visualPresetKey: presetKey,
-      visualPresetValue: toText(presetValueSource),
+      visualPresetValue: toText(selectionValue),
       forceExactTheme: true,
     };
   }
@@ -1431,23 +1193,7 @@
       return null;
     }
 
-    const mimeType = toText(
-      pickField(item, [
-        "mimeType",
-        "asset.mimeType",
-        "image.asset.mimeType",
-        "video.asset.mimeType",
-        "file.asset.mimeType",
-      ])
-    ).toLowerCase();
-    let mediaType = inferMediaType(item.type ?? item.mediaType ?? item.kind ?? item._type, src);
-
-    if (mimeType.startsWith("video/")) {
-      mediaType = "video";
-    } else if (mimeType.startsWith("image/")) {
-      mediaType = "image";
-    }
-
+    const mediaType = inferMediaType(item.type ?? item.mediaType ?? item.kind ?? item._type, src);
     const optimizedSrc = mediaType === "image" ? optimizeImageUrl(src, config) : src;
     const posterSrc = safeUrl(item.poster ?? item.posterUrl ?? item.poster_image ?? item.posterImage?.asset?.url ?? item.image?.asset?.url);
     const durationSeconds = Number(
@@ -1512,173 +1258,64 @@
     };
   }
 
-  function resolveAllowedPublicationTargets(config) {
-    const defaults = ["horizontal", "ambos"];
-    const configuredTargets = toArray(config.horizontalPublicationTargets ?? config.verticalPublicationTargets ?? config.allowedPublicationTargets ?? config.allowedPublishTargets);
-    const normalizedTargets = configuredTargets.map((value) => normalizeFieldToken(value)).filter(Boolean);
-    const targets = normalizedTargets.length > 0 ? normalizedTargets : defaults;
-    return new Set(targets);
+  function normalizeRadioSelection(value) {
+    const token = normalizeFieldToken(value);
+
+    if (!token) {
+      return "";
+    }
+
+    if (["radio1", "radio01", "1"].includes(token)) {
+      return "radio_1";
+    }
+
+    if (["radio2", "radio02", "2"].includes(token)) {
+      return "radio_2";
+    }
+
+    if (["radio3", "radio03", "3"].includes(token)) {
+      return "radio_3";
+    }
+
+    return "";
   }
 
-  function appendPublicationTargets(value, targets, visited = new Set()) {
-    if (value === undefined || value === null) {
-      return;
-    }
-
-    if (Array.isArray(value)) {
-      value.forEach((entry) => appendPublicationTargets(entry, targets, visited));
-      return;
-    }
-
-    if (typeof value === "object") {
-      if (visited.has(value)) {
-        return;
-      }
-
-      visited.add(value);
-
-      const nestedKeys = [
-        "value",
-        "label",
-        "title",
-        "name",
-        "slug.current",
-        "slug",
-        "channel",
-        "canal",
-        "target",
-        "targets",
-        "publicarEn",
-        "publicar_en",
-        "publicadoEn",
-        "publishOn",
-        "publicationChannel",
-        "sitioPublicacion",
-        "sitio_publicacion",
-        "sitioDePublicacion",
-        "platform",
-        "plataforma",
-      ];
-
-      let consumedNested = false;
-
-      nestedKeys.forEach((key) => {
-        const nestedValue = readField(value, key);
-
-        if (nestedValue === undefined || nestedValue === null) {
-          return;
-        }
-
-        consumedNested = true;
-        appendPublicationTargets(nestedValue, targets, visited);
-      });
-
-      if (!consumedNested) {
-        Object.values(value).forEach((nestedValue) => appendPublicationTargets(nestedValue, targets, visited));
-      }
-
-      return;
-    }
-
-    const rawText = toText(value);
-
-    if (!rawText) {
-      return;
-    }
-
-    rawText
-      .split(/[;,|/]+/)
-      .map((entry) => normalizeFieldToken(entry))
-      .filter(Boolean)
-      .forEach((token) => {
-        if (token.includes("horizontal")) {
-          targets.push("horizontal");
-          return;
-        }
-
-        if (token.includes("vertical")) {
-          targets.push("vertical");
-          return;
-        }
-
-        if (token.includes("amb") || token.includes("both")) {
-          targets.push("ambos");
-          return;
-        }
-
-        targets.push(token);
-      });
-  }
-
-  function extractPublicationTargets(doc) {
-    const rawPublicationTarget = pickField(
-      doc,
-      [
-        "publicarEn",
-        "publicar_en",
-        "publicadoEn",
-        "sitioPublicacion",
-        "sitio_publicacion",
-        "sitioDePublicacion",
-        "publicationChannel",
-        "publishOn",
-        "publish_channel",
-        "canalPublicacion",
-        "canal_publicacion",
-        "canalDifusion",
-        "difusion.sitioPublicacion",
-        "difusion.sitio_publicacion",
-        "Difusion.sitioPublicacion",
-        "Difusion.sitio_publicacion",
-        "difusion.publicarEn",
-        "difusion.publicar_en",
-        "difusion.publicadoEn",
-        "difusion.publishOn",
-        "difusion.publicationChannel",
-        "Difusion.publicarEn",
-        "Difusion.publicar_en",
-        "Difusion.publicadoEn",
-      ],
-      null
+  function normalizeRadioSettings(settings, config = {}) {
+    const source = settings && typeof settings === "object" ? settings : {};
+    const radioSeleccionada = normalizeRadioSelection(
+      source.radioSeleccionada ?? source.radio_seleccionada ?? source.radioSelection ?? source.radio_selected ?? config.radioSeleccionada ?? config.radioSelection
+    );
+    const radioUrls = {
+      radio_1: safeUrl(source.radioUrl1 ?? source.radio_url_1 ?? source.radio1Url ?? config.radioUrl1),
+      radio_2: safeUrl(source.radioUrl2 ?? source.radio_url_2 ?? source.radio2Url ?? config.radioUrl2),
+      radio_3: safeUrl(source.radioUrl3 ?? source.radio_url_3 ?? source.radio3Url ?? config.radioUrl3),
+    };
+    const radioUrlPorSeleccion = radioSeleccionada ? radioUrls[radioSeleccionada] || "" : "";
+    const radioUrlActiva = safeUrl(
+      source.radioUrlActiva ?? source.radio_url_activa ?? source.radioActivaUrl ?? source.activeRadioUrl ?? radioUrlPorSeleccion
+    );
+    const radioActiva = toBooleanFlag(
+      source.radioActiva ?? source.radio_activa ?? source.radioEnabled ?? source.radio_enabled ?? config.radioActiva
     );
 
-    if (rawPublicationTarget === undefined || rawPublicationTarget === null) {
-      return [];
-    }
-
-    const tokens = [];
-    appendPublicationTargets(rawPublicationTarget, tokens);
-
-    return Array.from(new Set(tokens));
-  }
-
-  function isPropertyVisibleInVertical(doc, config) {
-    const allowedTargets = resolveAllowedPublicationTargets(config);
-    const propertyTargets = extractPublicationTargets(doc);
-
-    if (propertyTargets.length === 0) {
-      return false;
-    }
-
-    return propertyTargets.some((target) => allowedTargets.has(target));
+    return {
+      activa: radioActiva,
+      seleccionada: radioSeleccionada,
+      url1: radioUrls.radio_1,
+      url2: radioUrls.radio_2,
+      url3: radioUrls.radio_3,
+      urlActiva: radioActiva ? radioUrlActiva : "",
+    };
   }
 
   function normalizeProperty(doc, config) {
-    if (!doc || typeof doc !== "object") {
-      return null;
-    }
-
-    if (!isPublishedForVertical(doc) || !isRecordActive(doc)) {
+    if (!doc || typeof doc !== "object" || !isRecordActive(doc)) {
       return null;
     }
 
     const name = toText(doc.titulo ?? doc.name ?? doc.title);
 
     if (!name) {
-      return null;
-    }
-
-    if (!isPropertyVisibleInVertical(doc, config)) {
       return null;
     }
 
@@ -1807,6 +1444,7 @@
       },
       properties: [],
       siteBaseUrl: toText(config.publicBaseUrl),
+      radio: normalizeRadioSettings({}, config),
       visualTheme: resolveVisualTheme({}, config),
       state: "unconfigured",
       message: "Completa projectId y dataset en src/config/sanity.js.",
@@ -1824,7 +1462,6 @@
       projectId: toText(config.projectId),
       dataset: toText(config.dataset),
       apiVersion: toText(config.apiVersion) || "2026-04-02",
-      timeout: Number.isFinite(Number(config.timeoutMs)) && Number(config.timeoutMs) > 0 ? Number(config.timeoutMs) : 8000,
       useCdn: config.useCdn !== false,
       perspective: config.perspective || "published",
     });
@@ -1840,6 +1477,32 @@
       siteBaseUrl,
       name,
       title
+    }`;
+  }
+
+  function buildDashboardConfigQuery() {
+    return `*[_type == "configuracionDashboard" && _id == "configuracion-dashboard"][0]{
+      _id,
+      estiloColor,
+      radioActiva,
+      radioSeleccionada,
+      radioUrl1,
+      radioUrl2,
+      radioUrl3,
+      "radioUrlActiva": select(
+        radioSeleccionada == "radio_1" => radioUrl1,
+        radioSeleccionada == "radio_2" => radioUrl2,
+        radioSeleccionada == "radio_3" => radioUrl3,
+        null
+      )
+    }`;
+  }
+
+  function buildCatalogQuery() {
+    return `{
+      "settingsDocument": ${buildSettingsQuery()},
+      "dashboardSettingsDocument": ${buildDashboardConfigQuery()},
+      "propertyDocuments": ${buildPropertiesQuery()}
     }`;
   }
 
@@ -1970,7 +1633,6 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
-        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       },
       video{
@@ -1981,7 +1643,6 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
-        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       },
       videos{
@@ -1992,7 +1653,6 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
-        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       },
       media[]{
@@ -2003,7 +1663,6 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url, image.asset->url, asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
-        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       },
       fotos[]{
@@ -2014,7 +1673,6 @@
         "poster": asset->url,
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
-        "mimeType": coalesce(mimeType, asset->mimeType, image.asset->mimeType, video.asset->mimeType, file.asset->mimeType),
         "type": coalesce(type, mediaType, kind, _type)
       }
     }`;
@@ -2054,26 +1712,32 @@
         )
       );
       const propertyTypes = Array.isArray(config.propertyTypes) && config.propertyTypes.length > 0 ? config.propertyTypes.map(toText).filter(Boolean) : [toText(config.propertyType) || "property"];
-      const [settingsDocument, propertyDocuments] = await Promise.all([
-        client.fetch(buildSettingsQuery(), { settingsTypes }),
-        client.fetch(buildPropertiesQuery(), { propertyTypes }),
-      ]);
+      const queryResult = await client.fetch(buildCatalogQuery(), { settingsTypes, propertyTypes });
+      const settingsDocument = queryResult && typeof queryResult === "object" ? queryResult.settingsDocument : null;
+      const dashboardSettingsDocument = queryResult && typeof queryResult === "object" ? queryResult.dashboardSettingsDocument : null;
+      const propertyDocuments = queryResult && typeof queryResult === "object" ? queryResult.propertyDocuments : null;
+      const mergedSettings = {
+        ...(settingsDocument && typeof settingsDocument === "object" ? settingsDocument : {}),
+        ...(dashboardSettingsDocument && typeof dashboardSettingsDocument === "object" ? dashboardSettingsDocument : {}),
+      };
 
-      const company = normalizeCompany(settingsDocument, config);
-      let visualTheme = resolveVisualTheme(settingsDocument, config);
+      const company = normalizeCompany(mergedSettings, config);
+      let visualTheme = resolveVisualTheme(mergedSettings, config);
+      const radio = normalizeRadioSettings(mergedSettings, config);
 
       if (!visualTheme && Array.isArray(propertyDocuments) && propertyDocuments.length > 0) {
         visualTheme = resolveVisualTheme(propertyDocuments[0], config);
       }
 
       const properties = Array.isArray(propertyDocuments) ? propertyDocuments.map((document) => normalizeProperty(document, config)).filter(Boolean) : [];
-      const siteBaseUrl = toText(settingsDocument && (settingsDocument.publicBaseUrl || settingsDocument.siteBaseUrl)) || toText(config.publicBaseUrl);
+      const siteBaseUrl = toText(mergedSettings && (mergedSettings.publicBaseUrl || mergedSettings.siteBaseUrl)) || toText(config.publicBaseUrl);
 
       if (properties.length === 0) {
         return {
           company,
           properties,
           siteBaseUrl,
+          radio,
           visualTheme,
           state: "empty",
           message: "Todavia no hay inmuebles publicados.",
@@ -2086,6 +1750,7 @@
         company,
         properties,
         siteBaseUrl,
+        radio,
         visualTheme,
         state: "ready",
       };
@@ -2136,16 +1801,11 @@
     // We listen to any changes (creation, update, deletion) on the relevant types.
     const query = `*[_type in $types]`;
     const params = { types: allRelevantTypes };
-    const configuredDebounceMs = Number(config.listenDebounceMs);
-    const listenDebounceMs = Number.isFinite(configuredDebounceMs) ? Math.max(100, configuredDebounceMs) : 250;
-    const configuredVisibility = toText(config.listenVisibility).toLowerCase();
-    const listenVisibility = ["query", "transaction"].includes(configuredVisibility) ? configuredVisibility : "query";
-    const listenOptions = { includeResult: false, visibility: listenVisibility };
 
     let updateTimeout;
 
-    const subscription = client.listen(query, params, listenOptions)
-      .subscribe(() => {
+    const subscription = client.listen(query, params, { includeResult: false, visibility: "query" })
+      .subscribe((update) => {
         // Debounce to avoid multiple rapid re-fetches if many documents are published down at once
         clearTimeout(updateTimeout);
         updateTimeout = setTimeout(async () => {
@@ -2155,9 +1815,7 @@
           } catch (error) {
             console.error("Error al actualizar catálogo vía Listen API:", error);
           }
-        }, listenDebounceMs);
-      }, (error) => {
-        console.error("Listen API desconectada:", error);
+        }, 1000);
       });
 
     return () => {

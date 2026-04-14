@@ -1,5 +1,5 @@
-import { parseNumber, parsePrice, readField, pickField, parseDuration, slugify } from './mappers.js';
-import { normalizeMedia } from './media.js';
+import { parseNumber, parsePrice, pickField, parseDuration, slugify, toBooleanFlag } from './mappers.js';
+import { normalizeMedia, safeUrl } from './media.js';
 import { buildServiceFeaturesFromFlags, buildPanelMetrics } from './metrics.js';
 import { normalizeTheme, resolveVisualTheme } from './theme.js';
 import { toText, normalizeFieldToken, hasValue, toArray, isRecordActive, normalizeFeatures, normalizeDetails, joinUniqueTexts, normalizeOperationLabel, buildPropertySummary } from './utils.js';
@@ -13,128 +13,58 @@ export function normalizeCompany(settings, config) {
     };
   }
 
-function collectPublicationTargets(value, targets, seen = new Set()) {
-    if (!hasValue(value)) {
-      return;
+export function normalizeRadioSelection(value) {
+    const token = normalizeFieldToken(value);
+
+    if (!token) {
+      return "";
     }
 
-    if (value && typeof value === "object") {
-      if (seen.has(value)) {
-        return;
-      }
-
-      seen.add(value);
+    if (["radio1", "radio01", "1"].includes(token)) {
+      return "radio_1";
     }
 
-    if (Array.isArray(value)) {
-      value.forEach((entry) => collectPublicationTargets(entry, targets, seen));
-      return;
+    if (["radio2", "radio02", "2"].includes(token)) {
+      return "radio_2";
     }
 
-    if (typeof value === "object") {
-      const keys = [
-        "value",
-        "label",
-        "title",
-        "name",
-        "current",
-        "publicarEn",
-        "publicacion",
-        "canal",
-        "canalPublicacion",
-        "publicationChannel",
-        "publicationTarget",
-      ];
-
-      keys.forEach((key) => {
-        const nested = readField(value, key);
-
-        if (hasValue(nested)) {
-          collectPublicationTargets(nested, targets, seen);
-        }
-      });
-
-      return;
+    if (["radio3", "radio03", "3"].includes(token)) {
+      return "radio_3";
     }
 
-    const text = toText(value);
-
-    if (text) {
-      targets.push(text);
-    }
+    return "";
   }
 
-function isVerticalPublicationTarget(value) {
-    const normalized = normalizeFieldToken(value);
-
-    if (!normalized) {
-      return false;
-    }
-
-    if (normalized === "horizontal" || normalized === "ambos") {
-      return true;
-    }
-
-    const segments = toText(value)
-      .toLowerCase()
-      .split(/[,;/|+&]|\by\b|\band\b/)
-      .map((segment) => normalizeFieldToken(segment))
-      .filter(Boolean);
-
-    return segments.includes("horizontal") || segments.includes("ambos");
-  }
-
-function isPublishedForVertical(doc) {
-    const publishInValue = pickField(
-      doc,
-      [
-        "Difusion.Publicar en",
-        "Difusion.publicarEn",
-        "Difusion.canalPublicacion",
-        "Difusion.publicationChannel",
-        "Difusion.publicationTarget",
-        "difusion.Publicar en",
-        "difusion.publicarEn",
-        "difusion.publicar_en",
-        "difusion.publicacion",
-        "difusion.canal",
-        "difusion.canalPublicacion",
-        "difusion.publicationChannel",
-        "difusion.publicationTarget",
-        "diffusion.publishIn",
-        "diffusion.publicationChannel",
-        "diffusion.publicationTarget",
-        "Publicar en",
-        "publicar en",
-        "publicarEn",
-        "publicar_en",
-        "sitioPublicacion",
-        "sitio_publicacion",
-        "sitioDePublicacion",
-        "publicacion",
-        "canalPublicacion",
-        "publicationChannel",
-        "publicationTarget",
-      ],
-      undefined
+export function normalizeRadioSettings(settings, config = {}) {
+    const source = settings && typeof settings === "object" ? settings : {};
+    const radioSeleccionada = normalizeRadioSelection(
+      source.radioSeleccionada ?? source.radio_seleccionada ?? source.radioSelection ?? source.radio_selected ?? config.radioSeleccionada ?? config.radioSelection
+    );
+    const radioUrls = {
+      radio_1: safeUrl(source.radioUrl1 ?? source.radio_url_1 ?? source.radio1Url ?? config.radioUrl1),
+      radio_2: safeUrl(source.radioUrl2 ?? source.radio_url_2 ?? source.radio2Url ?? config.radioUrl2),
+      radio_3: safeUrl(source.radioUrl3 ?? source.radio_url_3 ?? source.radio3Url ?? config.radioUrl3),
+    };
+    const radioUrlPorSeleccion = radioSeleccionada ? radioUrls[radioSeleccionada] || "" : "";
+    const radioUrlActiva = safeUrl(
+      source.radioUrlActiva ?? source.radio_url_activa ?? source.radioActivaUrl ?? source.activeRadioUrl ?? radioUrlPorSeleccion
+    );
+    const radioActiva = toBooleanFlag(
+      source.radioActiva ?? source.radio_activa ?? source.radioEnabled ?? source.radio_enabled ?? config.radioActiva
     );
 
-    if (!hasValue(publishInValue)) {
-      return false;
-    }
-
-    const targets = [];
-    collectPublicationTargets(publishInValue, targets);
-
-    return targets.some((target) => isVerticalPublicationTarget(target));
+    return {
+      activa: radioActiva,
+      seleccionada: radioSeleccionada,
+      url1: radioUrls.radio_1,
+      url2: radioUrls.radio_2,
+      url3: radioUrls.radio_3,
+      urlActiva: radioActiva ? radioUrlActiva : "",
+    };
   }
 
 export function normalizeProperty(doc, config) {
-    if (!doc || typeof doc !== "object") {
-      return null;
-    }
-
-    if (!isPublishedForVertical(doc) || !isRecordActive(doc)) {
+    if (!doc || typeof doc !== "object" || !isRecordActive(doc)) {
       return null;
     }
 
@@ -243,6 +173,7 @@ export function createEmptyCatalog(config = {}) {
       },
       properties: [],
       siteBaseUrl: toText(config.publicBaseUrl),
+      radio: normalizeRadioSettings({}, config),
       visualTheme: resolveVisualTheme({}, config),
       state: "unconfigured",
       message: "Completa projectId y dataset en src/config/sanity.js.",

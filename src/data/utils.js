@@ -2,8 +2,8 @@ import { createClientInstance } from './client.js';
 import { readField, pickField, formatArea, parseDuration } from './mappers.js';
 import { safeUrl, inferMediaType, optimizeImageUrl } from './media.js';
 import { metricLabelFromKey, metricPriority } from './metrics.js';
-import { normalizeCompany, normalizeProperty, createEmptyCatalog } from './normalization.js';
-import { buildSettingsQuery, buildPropertiesQuery } from './queries.js';
+import { normalizeCompany, normalizeRadioSettings, normalizeProperty, createEmptyCatalog } from './normalization.js';
+import { buildCatalogQuery } from './queries.js';
 import { resolveVisualTheme } from './theme.js';
 
 export function toText(value) {
@@ -633,26 +633,32 @@ export const loadCatalog = async function loadCatalog(config = {}) {
         )
       );
       const propertyTypes = Array.isArray(config.propertyTypes) && config.propertyTypes.length > 0 ? config.propertyTypes.map(toText).filter(Boolean) : [toText(config.propertyType) || "property"];
-      const [settingsDocument, propertyDocuments] = await Promise.all([
-        client.fetch(buildSettingsQuery(), { settingsTypes }),
-        client.fetch(buildPropertiesQuery(), { propertyTypes }),
-      ]);
+      const queryResult = await client.fetch(buildCatalogQuery(), { settingsTypes, propertyTypes });
+      const settingsDocument = queryResult && typeof queryResult === "object" ? queryResult.settingsDocument : null;
+      const dashboardSettingsDocument = queryResult && typeof queryResult === "object" ? queryResult.dashboardSettingsDocument : null;
+      const propertyDocuments = queryResult && typeof queryResult === "object" ? queryResult.propertyDocuments : null;
+      const mergedSettings = {
+        ...(settingsDocument && typeof settingsDocument === "object" ? settingsDocument : {}),
+        ...(dashboardSettingsDocument && typeof dashboardSettingsDocument === "object" ? dashboardSettingsDocument : {}),
+      };
 
-      const company = normalizeCompany(settingsDocument, config);
-      let visualTheme = resolveVisualTheme(settingsDocument, config);
+      const company = normalizeCompany(mergedSettings, config);
+      let visualTheme = resolveVisualTheme(mergedSettings, config);
+      const radio = normalizeRadioSettings(mergedSettings, config);
 
       if (!visualTheme && Array.isArray(propertyDocuments) && propertyDocuments.length > 0) {
         visualTheme = resolveVisualTheme(propertyDocuments[0], config);
       }
 
       const properties = Array.isArray(propertyDocuments) ? propertyDocuments.map((document) => normalizeProperty(document, config)).filter(Boolean) : [];
-      const siteBaseUrl = toText(settingsDocument && (settingsDocument.publicBaseUrl || settingsDocument.siteBaseUrl)) || toText(config.publicBaseUrl);
+      const siteBaseUrl = toText(mergedSettings && (mergedSettings.publicBaseUrl || mergedSettings.siteBaseUrl)) || toText(config.publicBaseUrl);
 
       if (properties.length === 0) {
         return {
           company,
           properties,
           siteBaseUrl,
+          radio,
           visualTheme,
           state: "empty",
           message: "Todavia no hay inmuebles publicados.",
@@ -665,6 +671,7 @@ export const loadCatalog = async function loadCatalog(config = {}) {
         company,
         properties,
         siteBaseUrl,
+        radio,
         visualTheme,
         state: "ready",
       };
