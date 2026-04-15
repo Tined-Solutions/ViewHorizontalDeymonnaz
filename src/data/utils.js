@@ -1,5 +1,5 @@
 import { createClientInstance } from './client.js';
-import { readField, pickField, formatArea, parseDuration } from './mappers.js';
+import { readField, pickField, formatArea, parseDuration, resolveSurfaceValues } from './mappers.js';
 import { safeUrl, inferMediaType, optimizeImageUrl } from './media.js';
 import { metricLabelFromKey, metricPriority } from './metrics.js';
 import { normalizeCompany, normalizeRadioSettings, normalizeProperty, createEmptyCatalog } from './normalization.js';
@@ -206,6 +206,7 @@ export function shouldSkipDynamicDetailKey(normalizedKey) {
       "siteurl",
       "canonicalurl",
       "permalink",
+      "superficielegacy",
     ]);
 
     if (excludedExact.has(normalizedKey)) {
@@ -260,6 +261,7 @@ export function collectDynamicDetails(doc, existingDetails = []) {
 
 export function normalizeDetails(doc, property) {
     const details = [];
+  const surfaces = resolveSurfaceValues(doc);
 
     function pushDetail(label, value) {
       const text = normalizeDetailValue(value);
@@ -274,8 +276,8 @@ export function normalizeDetails(doc, property) {
       });
     }
 
-    pushDetail("Superficie total", formatArea(pickField(doc, ["superficieTotal", "SuperficieTotal", "totalArea", "m2Totales", "metrosTotales"])));
-    pushDetail("Superficie cubierta", formatArea(pickField(doc, ["superficieCubierta", "SuperficieCubierta", "coveredArea", "m2Cubiertos", "metrosCubiertos"])));
+    pushDetail("Superficie terreno", formatArea(surfaces.superficieTerreno));
+    pushDetail("Superficie edificada", formatArea(surfaces.superficieEdificada));
     pushDetail("Expensas", toText(pickField(doc, ["expensas", "Expensas", "expenses"])));
     pushDetail("Antigüedad", toText(pickField(doc, ["antiguedad", "Antiguedad", "age", "yearsOld"])));
 
@@ -294,8 +296,12 @@ export function normalizeDetails(doc, property) {
         return "cochera";
       }
 
-      if (["superficie", "superficietotal", "superficiecubierta", "m2", "metros", "totalarea", "coveredarea", "area"].includes(normalized)) {
-        return "superficie";
+      if (["superficieterreno", "superficie", "superficietotal", "m2", "metros", "totalarea", "area"].includes(normalized)) {
+        return "superficieterreno";
+      }
+
+      if (["superficieedificada", "superficiecubierta", "coveredarea", "m2cubiertos"].includes(normalized)) {
+        return "superficieedificada";
       }
 
       if (["patio"].includes(normalized)) {
@@ -365,14 +371,13 @@ export function normalizeOperationLabel(value) {
 
 export function buildPropertyMetrics(doc) {
     const metrics = [];
+  const surfaces = resolveSurfaceValues(doc);
     const ambientes = pickField(doc, ["Ambientes", "ambientes", "rooms", "roomCount", "cantidadAmbientes"]);
     const dormitorios = pickField(doc, ["Dormitorios", "dormitorios", "habitaciones", "bedrooms", "bedroomCount", "cantidadDormitorios"]);
     const banos = pickField(doc, ["Banos", "banos", "Baños", "baños", "bathrooms", "bathroomCount", "cantidadBanos"]);
     const cochera = pickField(doc, ["Cochera", "cochera", "garage", "garages", "garageCount", "cocheras"]);
-    const superficie =
-      formatArea(pickField(doc, ["superficieTotal", "SuperficieTotal", "totalArea", "m2Totales", "metrosTotales"])) ||
-      formatArea(pickField(doc, ["superficieCubierta", "SuperficieCubierta", "coveredArea", "m2Cubiertos", "metrosCubiertos"])) ||
-      formatArea(pickField(doc, ["superficie", "Superficie", "m2", "metros", "area", "metrosCuadrados", "mts2"]));
+    const superficieTerreno = formatArea(surfaces.superficieTerreno);
+    const superficieEdificada = formatArea(surfaces.superficieEdificada);
 
     if (hasValue(ambientes)) {
       metrics.push({
@@ -402,10 +407,17 @@ export function buildPropertyMetrics(doc) {
       });
     }
 
-    if (hasValue(superficie)) {
+    if (hasValue(superficieTerreno)) {
       metrics.push({
-        label: "Superficie",
-        value: superficie,
+        label: "Superficie terreno",
+        value: superficieTerreno,
+      });
+    }
+
+    if (hasValue(superficieEdificada)) {
+      metrics.push({
+        label: "Superficie edificada",
+        value: superficieEdificada,
       });
     }
 
@@ -434,7 +446,11 @@ export function buildDynamicMetricsFromDoc(doc) {
       } else if (/cochera|garage|parking/.test(normalizedKey)) {
         label = "Cochera";
       } else if (/superficie|m2|metros|area|covered/.test(normalizedKey)) {
-        label = "Superficie";
+        if (/edificada|cubierta|covered|built/.test(normalizedKey)) {
+          label = "Superficie edificada";
+        } else {
+          label = "Superficie terreno";
+        }
       }
 
       if (!label) {
@@ -447,7 +463,7 @@ export function buildDynamicMetricsFromDoc(doc) {
         return;
       }
 
-      const displayValue = label === "Superficie" ? formatArea(rawText) || rawText : rawText;
+      const displayValue = /^Superficie\s/.test(label) ? formatArea(rawText) || rawText : rawText;
       const signature = `${normalizeFieldToken(label)}|${normalizeFieldToken(displayValue)}`;
 
       if (seen.has(signature)) {

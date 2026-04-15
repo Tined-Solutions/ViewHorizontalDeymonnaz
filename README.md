@@ -38,7 +38,7 @@ Opciones de performance recomendadas en `src/config/sanity.js`:
 El loader busca dos tipos de documentos:
 
 - `siteSettings`: usa `companyName`, `companyTagline`, `publicBaseUrl` o `siteBaseUrl`.
-- `inmueble` o `property`: usa `titulo` como nombre principal, `Tipo`, `operacion`, `Ubicacion`, `Direccion`, `Ambientes`, `Cochera`, `Servicios`, `precio`, `fotos`, `Link`, además de los campos de compatibilidad anteriores como `name`, `title`, `type`, `location`, `summary`, `metrics`, `features`, `theme`, `media`, `sortOrder` y `active`.
+- `inmueble` o `property`: usa `titulo` como nombre principal, `Tipo`, `operacion`, `Ubicacion`, `Direccion`, `Ambientes`, `Cochera`, `Servicios`, `precio`, `fotos`, `Link`, `SuperficieTerreno` y `SuperficieEdificada`, además de los campos de compatibilidad anteriores como `Superficie` (fallback legacy temporal), `name`, `title`, `type`, `location`, `summary`, `metrics`, `features`, `theme`, `media`, `sortOrder` y `active`.
 
 Las propiedades publicadas aparecen en pantalla ordenadas por `sortOrder` y luego por nombre. Si no hay inmuebles publicados, se muestra un estado vacío en lugar de contenido de demo.
 

@@ -1,4 +1,4 @@
-import { parseNumber, parsePrice, pickField, parseDuration, slugify, toBooleanFlag } from './mappers.js';
+import { parseNumber, parsePrice, pickField, parseDuration, slugify, toBooleanFlag, resolveSurfaceValues } from './mappers.js';
 import { normalizeMedia, safeUrl } from './media.js';
 import { buildServiceFeaturesFromFlags, buildPanelMetrics } from './metrics.js';
 import { normalizeTheme, resolveVisualTheme } from './theme.js';
@@ -106,6 +106,7 @@ export function normalizeProperty(doc, config) {
         "landingUrl",
       ])
     );
+    const surfaces = resolveSurfaceValues(doc);
 
     const metrics = buildPanelMetrics(doc);
 
@@ -121,6 +122,12 @@ export function normalizeProperty(doc, config) {
       badge: toText(doc.badge) || operationLabel,
       summary: buildPropertySummary(doc, type, location, operationLabel),
       publishedUrl,
+      superficieTerreno: surfaces.superficieTerreno,
+      superficieEdificada: surfaces.superficieEdificada,
+      superficieLegacy: surfaces.superficieLegacy,
+      SuperficieTerreno: surfaces.superficieTerreno,
+      SuperficieEdificada: surfaces.superficieEdificada,
+      SuperficieLegacy: surfaces.superficieLegacy,
       metrics,
       features: normalizeFeatures([
         ...toArray(
