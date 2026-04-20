@@ -26,6 +26,26 @@
       glow: "#d8cdbc",
     },
   };
+  const publicationTargetFieldKeys = [
+    "publicationTarget",
+    "publicationtarget",
+    "publicationChannel",
+    "publicationchannel",
+    "canalPublicacion",
+    "canalpublicacion",
+    "publicarEn",
+    "publicaren",
+    "sitioPublicacion",
+    "sitiopublicacion",
+    "sitioDePublicacion",
+    "sitiodepublicacion",
+    "orientation",
+    "displayOrientation",
+    "screenOrientation",
+    "orientacion",
+    "viewMode",
+    "modoVista",
+  ];
 
   function getVisualThemePresets() {
     return window.InmoVisualThemePresets || fallbackVisualThemePresets;
@@ -79,6 +99,133 @@
     }
 
     return true;
+  }
+
+  function normalizePublicationTarget(value) {
+    const token = normalizeFieldToken(value);
+
+    if (!token) {
+      return "";
+    }
+
+    if (
+      token === "all" ||
+      token === "any" ||
+      token.includes("ambos") ||
+      token.includes("ambas") ||
+      token.includes("both") ||
+      token.includes("todos") ||
+      token === "todo"
+    ) {
+      return "all";
+    }
+
+    const hasHorizontal = token.includes("horizontal") || token.includes("landscape") || token.includes("apaisado");
+    const hasVertical = token.includes("vertical") || token.includes("portrait") || token.includes("retrato");
+
+    if (hasHorizontal && hasVertical) {
+      return "all";
+    }
+
+    if (hasHorizontal || token === "h") {
+      return "horizontal";
+    }
+
+    if (hasVertical || token === "v") {
+      return "vertical";
+    }
+
+    return "";
+  }
+
+  function collectPublicationTargetsFromValue(value, targetSet) {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => collectPublicationTargetsFromValue(item, targetSet));
+      return;
+    }
+
+    if (typeof value === "object") {
+      collectPublicationTargetsFromValue(value.value, targetSet);
+      collectPublicationTargetsFromValue(value.label, targetSet);
+      collectPublicationTargetsFromValue(value.name, targetSet);
+      collectPublicationTargetsFromValue(value.title, targetSet);
+      collectPublicationTargetsFromValue(value.current, targetSet);
+      return;
+    }
+
+    const text = toText(value);
+
+    if (!text) {
+      return;
+    }
+
+    const parts = text
+      .split(/[,;|/+]/g)
+      .flatMap((part) => part.split(/\s+(?:y|e|o|u|and|or)\s+/i))
+      .map((part) => toText(part))
+      .filter(Boolean);
+    const candidates = parts.length > 0 ? parts : [text];
+
+    candidates.forEach((candidate) => {
+      const normalized = normalizePublicationTarget(candidate);
+
+      if (normalized) {
+        targetSet.add(normalized);
+      }
+    });
+  }
+
+  function readPublicationTargets(record) {
+    const targets = new Set();
+
+    publicationTargetFieldKeys.forEach((key) => {
+      const value = readField(record, key);
+      collectPublicationTargetsFromValue(value, targets);
+    });
+
+    return Array.from(targets);
+  }
+
+  function resolveConfiguredPublicationTarget(config = {}, settings = {}) {
+    const configuredTargets = new Set();
+
+    publicationTargetFieldKeys.forEach((key) => {
+      const configValue = readField(config, key);
+      collectPublicationTargetsFromValue(configValue, configuredTargets);
+    });
+
+    if (configuredTargets.size > 0) {
+      return Array.from(configuredTargets)[0];
+    }
+
+    const settingsTargets = new Set();
+
+    publicationTargetFieldKeys.forEach((key) => {
+      const settingsValue = readField(settings, key);
+      collectPublicationTargetsFromValue(settingsValue, settingsTargets);
+    });
+
+    return settingsTargets.size > 0 ? Array.from(settingsTargets)[0] : "";
+  }
+
+  function matchesPublicationTarget(record, config = {}) {
+    const configuredTarget = normalizePublicationTarget(config.publicationTarget);
+
+    if (!configuredTarget || configuredTarget === "all") {
+      return true;
+    }
+
+    const recordTargets = readPublicationTargets(record);
+
+    if (recordTargets.length === 0) {
+      return true;
+    }
+
+    return recordTargets.includes("all") || recordTargets.includes(configuredTarget);
   }
 
   function parseNumber(value) {
@@ -1372,7 +1519,7 @@
   }
 
   function normalizeProperty(doc, config) {
-    if (!doc || typeof doc !== "object" || !isRecordActive(doc)) {
+    if (!doc || typeof doc !== "object" || !isRecordActive(doc) || !matchesPublicationTarget(doc, config)) {
       return null;
     }
 
@@ -1795,6 +1942,8 @@
         ...(settingsDocument && typeof settingsDocument === "object" ? settingsDocument : {}),
         ...(dashboardSettingsDocument && typeof dashboardSettingsDocument === "object" ? dashboardSettingsDocument : {}),
       };
+      const publicationTarget = resolveConfiguredPublicationTarget(config, mergedSettings);
+      const runtimeConfig = publicationTarget ? { ...config, publicationTarget } : config;
 
       const company = normalizeCompany(mergedSettings, config);
       let visualTheme = resolveVisualTheme(mergedSettings, config);
@@ -1804,7 +1953,9 @@
         visualTheme = resolveVisualTheme(propertyDocuments[0], config);
       }
 
-      const properties = Array.isArray(propertyDocuments) ? propertyDocuments.map((document) => normalizeProperty(document, config)).filter(Boolean) : [];
+      const properties = Array.isArray(propertyDocuments)
+        ? propertyDocuments.map((document) => normalizeProperty(document, runtimeConfig)).filter(Boolean)
+        : [];
       const siteBaseUrl = toText(mergedSettings && (mergedSettings.publicBaseUrl || mergedSettings.siteBaseUrl)) || toText(config.publicBaseUrl);
 
       if (properties.length === 0) {
@@ -1814,6 +1965,7 @@
           siteBaseUrl,
           radio,
           visualTheme,
+          publicationTarget,
           state: "empty",
           message: "Todavia no hay inmuebles publicados.",
         };
@@ -1827,6 +1979,7 @@
         siteBaseUrl,
         radio,
         visualTheme,
+        publicationTarget,
         state: "ready",
       };
     } catch (error) {

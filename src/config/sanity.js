@@ -19,4 +19,5 @@ window.InmoSanityConfig = {
 	settingsType: "siteSettings",
 	propertyType: "inmueble",
 	propertyTypes: ["inmueble"],
+	publicationTarget: "horizontal",
 };
