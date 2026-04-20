@@ -2,48 +2,44 @@ export function isCatalogReady(catalog) {
   return Boolean(catalog && Array.isArray(catalog.properties) && catalog.properties.length > 0);
 }
 
-function toStableSerializable(value) {
-  if (Array.isArray(value)) {
-    return value.map((item) => {
-      if (item === undefined || typeof item === "function" || typeof item === "symbol") {
-        return null;
-      }
-
-      return toStableSerializable(item);
-    });
-  }
-
-  if (value && typeof value === "object") {
-    const stableObject = {};
-    const keys = Object.keys(value).sort((left, right) => left.localeCompare(right));
-
-    keys.forEach((key) => {
-      const fieldValue = value[key];
-
-      if (fieldValue === undefined || typeof fieldValue === "function" || typeof fieldValue === "symbol") {
-        return;
-      }
-
-      stableObject[key] = toStableSerializable(fieldValue);
-    });
-
-    return stableObject;
-  }
-
-  if (typeof value === "number" && !Number.isFinite(value)) {
-    return null;
-  }
-
-  if (typeof value === "bigint") {
-    return value.toString();
-  }
-
-  return value;
-}
-
 export function catalogSignature(catalog) {
-  const source = catalog && typeof catalog === "object" ? catalog : null;
-  return JSON.stringify(toStableSerializable(source));
+  return JSON.stringify({
+    company: catalog.company || {},
+    siteBaseUrl: catalog.siteBaseUrl || "",
+    radio: catalog.radio
+      ? {
+          activa: Boolean(catalog.radio.activa),
+          seleccionada: catalog.radio.seleccionada || "",
+          urlActiva: catalog.radio.urlActiva || "",
+          url1: catalog.radio.url1 || "",
+          url2: catalog.radio.url2 || "",
+          url3: catalog.radio.url3 || "",
+        }
+      : null,
+    visualTheme: catalog.visualTheme
+      ? {
+          primary: catalog.visualTheme.primary || "",
+          secondary: catalog.visualTheme.secondary || "",
+          tertiary: catalog.visualTheme.tertiary || "",
+          glow: catalog.visualTheme.glow || "",
+          visualPresetKey: catalog.visualTheme.visualPresetKey || "",
+          visualPresetValue: catalog.visualTheme.visualPresetValue || "",
+        }
+      : null,
+    properties: catalog.properties.map((property) => ({
+      id: property.id,
+      name: property.name,
+      publishedUrl: property.publishedUrl || "",
+      sortOrder: Number.isFinite(property.sortOrder) ? property.sortOrder : null,
+      media: Array.isArray(property.media)
+        ? property.media.map((item) => ({
+            type: item.type,
+            src: item.src,
+            duration: item.duration || 0,
+          }))
+        : [],
+    })),
+  });
 }
 
 export function resolveInitialPropertyIndex(catalog) {

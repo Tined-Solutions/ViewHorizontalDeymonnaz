@@ -9,52 +9,208 @@
     return;
   }
 
+  function resolveRadioUrl(radio) {
+    const source = radio && typeof radio === "object" ? radio : {};
+    const explicitUrl = String(source.urlActiva || "").trim();
+
+    if (explicitUrl) {
+      return explicitUrl;
+    }
+
+    const selected = String(source.seleccionada || "").trim().toLowerCase();
+
+    if (selected === "radio_1") {
+      return String(source.url1 || "").trim();
+    }
+
+    if (selected === "radio_2") {
+      return String(source.url2 || "").trim();
+    }
+
+    if (selected === "radio_3") {
+      return String(source.url3 || "").trim();
+    }
+
+    return "";
+  }
+
+  function createRadioAutoplayController() {
+    const audio = new Audio();
+    let hls = null;
+    let active = false;
+    let streamUrl = "";
+    let retryTimerId = 0;
+
+    audio.preload = "auto";
+    audio.crossOrigin = "anonymous";
+
+    function clearRetry() {
+      if (!retryTimerId) {
+        return;
+      }
+
+      window.clearTimeout(retryTimerId);
+      retryTimerId = 0;
+    }
+
+    function destroyHls() {
+      if (!hls) {
+        return;
+      }
+
+      hls.destroy();
+      hls = null;
+    }
+
+    function stop() {
+      clearRetry();
+      destroyHls();
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    }
+
+    function bindSource(url) {
+      const nextUrl = String(url || "").trim();
+
+      if (!nextUrl) {
+        stop();
+        return;
+      }
+
+      const isHlsSource = /(?:\.m3u8(?:$|\?)|stream\.mux\.com)/i.test(nextUrl);
+
+      if (isHlsSource && window.Hls && typeof window.Hls.isSupported === "function" && window.Hls.isSupported()) {
+        if (hls && audio.dataset.radioSourceUrl === nextUrl) {
+          return;
+        }
+
+        destroyHls();
+        audio.removeAttribute("src");
+        audio.load();
+
+        const instance = new window.Hls({ autoStartLoad: true, lowLatencyMode: true });
+        instance.loadSource(nextUrl);
+        instance.attachMedia(audio);
+        hls = instance;
+        audio.dataset.radioSourceUrl = nextUrl;
+        return;
+      }
+
+      if (!hls && audio.dataset.radioSourceUrl === nextUrl) {
+        return;
+      }
+
+      destroyHls();
+      audio.src = nextUrl;
+      audio.dataset.radioSourceUrl = nextUrl;
+      audio.load();
+    }
+
+    function scheduleRetry() {
+      clearRetry();
+      retryTimerId = window.setTimeout(() => {
+        void attemptPlay();
+      }, 1500);
+    }
+
+    async function attemptPlay() {
+      if (!active || !streamUrl) {
+        return;
+      }
+
+      clearRetry();
+      bindSource(streamUrl);
+
+      audio.muted = false;
+
+      try {
+        await audio.play();
+        return;
+      } catch {
+        try {
+          audio.muted = true;
+          await audio.play();
+          audio.muted = false;
+          return;
+        } catch {
+          scheduleRetry();
+        }
+      }
+    }
+
+    function update(catalog) {
+      const radio = catalog && catalog.radio && typeof catalog.radio === "object" ? catalog.radio : {};
+
+      active = Boolean(radio.activa);
+      streamUrl = resolveRadioUrl(radio);
+
+      if (!active || !streamUrl) {
+        stop();
+        return;
+      }
+
+      bindSource(streamUrl);
+      void attemptPlay();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void attemptPlay();
+    }
+
+    function handleWindowFocus() {
+      void attemptPlay();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return {
+      update,
+      destroy() {
+        clearRetry();
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        window.removeEventListener("focus", handleWindowFocus);
+        stop();
+      },
+    };
+  }
+
   function isCatalogReady(catalog) {
     return Boolean(catalog && Array.isArray(catalog.properties) && catalog.properties.length > 0);
   }
 
-  function toStableSerializable(value) {
-    if (Array.isArray(value)) {
-      return value.map((item) => {
-        if (item === undefined || typeof item === "function" || typeof item === "symbol") {
-          return null;
-        }
-
-        return toStableSerializable(item);
-      });
-    }
-
-    if (value && typeof value === "object") {
-      const stableObject = {};
-      const keys = Object.keys(value).sort((left, right) => left.localeCompare(right));
-
-      keys.forEach((key) => {
-        const fieldValue = value[key];
-
-        if (fieldValue === undefined || typeof fieldValue === "function" || typeof fieldValue === "symbol") {
-          return;
-        }
-
-        stableObject[key] = toStableSerializable(fieldValue);
-      });
-
-      return stableObject;
-    }
-
-    if (typeof value === "number" && !Number.isFinite(value)) {
-      return null;
-    }
-
-    if (typeof value === "bigint") {
-      return value.toString();
-    }
-
-    return value;
-  }
-
   function catalogSignature(catalog) {
-    const source = catalog && typeof catalog === "object" ? catalog : null;
-    return JSON.stringify(toStableSerializable(source));
+    return JSON.stringify({
+      company: catalog.company || {},
+      siteBaseUrl: catalog.siteBaseUrl || "",
+      radio: catalog.radio
+        ? {
+            activa: Boolean(catalog.radio.activa),
+            seleccionada: catalog.radio.seleccionada || "",
+            urlActiva: catalog.radio.urlActiva || "",
+            url1: catalog.radio.url1 || "",
+            url2: catalog.radio.url2 || "",
+            url3: catalog.radio.url3 || "",
+          }
+        : null,
+      properties: catalog.properties.map((property) => ({
+        id: property.id,
+        name: property.name,
+        sortOrder: Number.isFinite(property.sortOrder) ? property.sortOrder : null,
+        media: Array.isArray(property.media)
+          ? property.media.map((item) => ({
+              type: item.type,
+              src: item.src,
+              duration: item.duration || 0,
+            }))
+          : [],
+      })),
+    });
   }
 
   function resolveInitialPropertyIndex(catalog) {
@@ -82,6 +238,7 @@
 
   let controller = null;
   let activeSignature = "";
+  const radioController = createRadioAutoplayController();
 
   function destroyController(options = {}) {
     if (controller) {
@@ -95,6 +252,7 @@
   }
 
   function renderStatus(title, description, details = "") {
+    radioController.update(null);
     destroyController({ resetSignature: true });
     document.title = "Pantalla Inmobiliaria";
     root.innerHTML = `
@@ -224,6 +382,8 @@
   }
 
   function activateCatalog(catalog) {
+    radioController.update(catalog);
+
     if (!isCatalogReady(catalog)) {
       destroyController({ resetSignature: true });
 

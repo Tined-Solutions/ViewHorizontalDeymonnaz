@@ -1,9 +1,29 @@
 import { toText, normalizeFieldToken, hasValue, toArray, isTruthy, isFalsey } from './utils.js';
 
 export function parseNumber(value) {
-    const cleaned = toText(value).replace(/[^0-9.-]/g, "");
-    const parsed = Number.parseFloat(cleaned);
-    return Number.isFinite(parsed) ? parsed : 0;
+    const parsed = parseNullableNumber(value);
+    return parsed === null ? 0 : parsed;
+  }
+
+export function parseNullableNumber(value) {
+    if (!hasValue(value)) {
+      return null;
+    }
+
+    const normalizedText = toText(value)
+      .replace(/m\^?2|mt2|mts2|metros?\s*cuadrados?/gi, "")
+      .replace(/\s+/g, "")
+      .replace(/,/g, ".");
+    const cleaned = normalizedText.replace(/[^0-9.-]/g, "");
+
+    if (!cleaned) {
+      return null;
+    }
+
+    const canonical = /^-?\d{1,3}(?:\.\d{3})+$/.test(cleaned) ? cleaned.replace(/\./g, "") : cleaned;
+    const parsed = Number.parseFloat(canonical);
+
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
 export function clampNumber(value, min, max) {
@@ -81,6 +101,24 @@ export function pickField(record, keys, fallback = "") {
     }
 
     return fallback;
+  }
+
+export function resolveSurfaceValues(record) {
+    const superficieTerreno = parseNullableNumber(
+      pickField(record, ["SuperficieTerreno", "superficieTerreno", "superficie_terreno"])
+    );
+    const superficieEdificada = parseNullableNumber(
+      pickField(record, ["SuperficieEdificada", "superficieEdificada", "superficie_edificada"])
+    );
+    const superficieLegacy = parseNullableNumber(
+      pickField(record, ["SuperficieLegacy", "superficieLegacy", "Superficie", "superficie"])
+    );
+
+    return {
+      superficieTerreno: superficieTerreno ?? superficieLegacy ?? null,
+      superficieEdificada: superficieEdificada ?? null,
+      superficieLegacy: superficieLegacy ?? null,
+    };
   }
 
 export function formatArea(value) {
