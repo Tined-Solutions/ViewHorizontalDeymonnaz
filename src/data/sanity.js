@@ -436,6 +436,26 @@
     return Math.round(numeric);
   }
 
+  function resolveGlobalDisplaySeconds(value, fallbackSeconds = 15) {
+    const parsed = Number.parseFloat(toText(value).replace(",", "."));
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return fallbackSeconds;
+    }
+
+    return Math.max(1, Math.round(parsed));
+  }
+
+  function normalizeVideoPlaybackMode(value) {
+    const mode = normalizeFieldToken(value);
+
+    if (mode === "completo") {
+      return "completo";
+    }
+
+    return "ajustar_tiempo_global";
+  }
+
   function sanitizeHexColor(value, fallback) {
     const text = toText(value);
     return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(text) ? text : fallback;
@@ -1529,8 +1549,8 @@
       return null;
     }
 
-    const fallbackDurationMs = Number(config.defaultDurationMs) || 20000;
-    const totalDurationMs = parseDuration(pickField(doc, ["durationMs", "duration_ms", "slideDurationMs", "slideDuration", "duration"]), fallbackDurationMs);
+    const fallbackDurationMs = Number(config.defaultDurationMs);
+    const totalDurationMs = Number.isFinite(fallbackDurationMs) && fallbackDurationMs > 0 ? Math.round(fallbackDurationMs) : 15000;
     const media = normalizeMedia(
       [
         pickField(doc, ["media", "Media"]),
@@ -1547,6 +1567,21 @@
       totalDurationMs,
       config
     );
+
+    const explicitVideoUrl = safeUrl(pickField(doc, ["videoUrl", "video_url", "videoMp4.asset.url"]));
+    const firstVideoMedia = media.find((item) => item && item.type === "video" && item.src);
+    const resolvedVideoUrl = explicitVideoUrl || (firstVideoMedia ? safeUrl(firstVideoMedia.src) : "");
+    const modoReproduccionVideo = normalizeVideoPlaybackMode(
+      pickField(doc, ["modoReproduccionVideo", "modo_reproduccion_video", "videoPlaybackMode"])
+    );
+
+    if (resolvedVideoUrl) {
+      media.sort((left, right) => {
+        const leftPriority = left && left.type === "video" ? 0 : 1;
+        const rightPriority = right && right.type === "video" ? 0 : 1;
+        return leftPriority - rightPriority;
+      });
+    }
 
     if (media.length === 0) {
       return null;
@@ -1585,10 +1620,14 @@
       slug: toText(doc.slug?.current ?? doc.slug ?? ""),
       name,
       title: toText(doc.title ?? doc.titulo ?? name),
+      sitioPublicacion: toText(pickField(doc, ["sitioPublicacion", "sitio_de_publicacion", "publicationTarget"])),
       type,
       location,
       price: parsePrice(pickField(doc, ["price", "precio", "valor", "importe", "amount"])),
       currency: toText(pickField(doc, ["moneda", "currency", "currencyCode", "currency_code"])),
+      modoReproduccionVideo,
+      videoUrl: resolvedVideoUrl || null,
+      videoMimeType: toText(pickField(doc, ["videoMimeType", "video_mime_type", "videoMp4.asset.mimeType"])),
       badge: toText(doc.badge) || operationLabel,
       summary: buildPropertySummary(doc, type, location, operationLabel),
       publishedUrl,
@@ -1654,6 +1693,8 @@
   }
 
   function createEmptyCatalog(config = {}) {
+    const tiempoVisualizacionSegundos = resolveGlobalDisplaySeconds(config.tiempoVisualizacionSegundos, 15);
+
     return {
       company: {
         name: "",
@@ -1661,6 +1702,8 @@
       },
       properties: [],
       siteBaseUrl: toText(config.publicBaseUrl),
+      tiempoVisualizacionSegundos,
+      defaultDurationMs: tiempoVisualizacionSegundos * 1000,
       radio: normalizeRadioSettings({}, config),
       visualTheme: resolveVisualTheme({}, config),
       state: "unconfigured",
@@ -1700,6 +1743,7 @@
   function buildDashboardConfigQuery() {
     return `*[_type == "configuracionDashboard" && _id == "configuracion-dashboard"][0]{
       _id,
+      "tiempoVisualizacionSegundos": coalesce(tiempoVisualizacionSegundos, 15),
       estiloColor,
       radioActiva,
       radioSeleccionada,
@@ -1724,7 +1768,7 @@
   }
 
   function buildPropertiesQuery() {
-    return `*[_type in $propertyTypes && active != false] | order(coalesce(sortOrder, sort_order, order, rank, 0) asc, coalesce(name, title, titulo, slug.current, _id) asc) {
+    return `*[_type == "inmueble"] {
       ...,
       _id,
       _type,
@@ -1733,6 +1777,13 @@
       name,
       title,
       titulo,
+      sitioPublicacion,
+      modoReproduccionVideo,
+      "videoUrl": videoMp4.asset->url,
+      "videoMimeType": videoMp4.asset->mimeType,
+      fotos,
+      precio,
+      moneda,
       Tipo,
       tipo,
       operacion,
@@ -1942,8 +1993,15 @@
         ...(settingsDocument && typeof settingsDocument === "object" ? settingsDocument : {}),
         ...(dashboardSettingsDocument && typeof dashboardSettingsDocument === "object" ? dashboardSettingsDocument : {}),
       };
+      const tiempoVisualizacionSegundos = resolveGlobalDisplaySeconds(
+        mergedSettings && mergedSettings.tiempoVisualizacionSegundos,
+        15
+      );
+      const defaultDurationMs = tiempoVisualizacionSegundos * 1000;
       const publicationTarget = resolveConfiguredPublicationTarget(config, mergedSettings);
-      const runtimeConfig = publicationTarget ? { ...config, publicationTarget } : config;
+      const runtimeConfig = publicationTarget
+        ? { ...config, publicationTarget, defaultDurationMs }
+        : { ...config, defaultDurationMs };
 
       const company = normalizeCompany(mergedSettings, config);
       let visualTheme = resolveVisualTheme(mergedSettings, config);
@@ -1963,6 +2021,8 @@
           company,
           properties,
           siteBaseUrl,
+          tiempoVisualizacionSegundos,
+          defaultDurationMs,
           radio,
           visualTheme,
           publicationTarget,
@@ -1977,6 +2037,8 @@
         company,
         properties,
         siteBaseUrl,
+        tiempoVisualizacionSegundos,
+        defaultDurationMs,
         radio,
         visualTheme,
         publicationTarget,

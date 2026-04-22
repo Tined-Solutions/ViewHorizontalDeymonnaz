@@ -1,7 +1,8 @@
 {
   "scripts": {
     "dev": "node server.mjs",
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "test": "node --test"
   },
   "dependencies": {
     "@sanity/client": "^7.20.0",

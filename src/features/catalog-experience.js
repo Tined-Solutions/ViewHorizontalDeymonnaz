@@ -1,44 +1,33 @@
 import { React, create, motion, useReducedMotion } from "../runtime/react-motion.js";
 import { baseTitle } from "../constants/ui.js";
 import { buildQrUrl, resolveInitialPropertyIndex } from "../shared/catalog.js?v=20260411-03";
+import { resolveDuracionYComportamiento } from "../shared/rotation.js?v=20260422-01";
 import { DEFAULT_MEDIA_VISUAL, buildPanelVisual, resolveImageVisual } from "../shared/media-visual.js?v=20260411-03";
 import { hasQrImageCached, preloadQrImage } from "../shared/qr.js?v=20260411-03";
 import { BackgroundOrbs } from "../ui/background-orbs.js?v=20260411-03";
 import { MediaStage } from "../ui/media-stage.js?v=20260411-03";
 import { PropertyPanel } from "../ui/property-panel.js?v=20260411-03";
 
-function resolveMediaDurationMs(media, fallbackDurationMs) {
-  const explicitDurationMs = Number(media && media.duration);
-
-  if (Number.isFinite(explicitDurationMs) && explicitDurationMs > 0) {
-    return explicitDurationMs;
-  }
-
-  return Number.isFinite(fallbackDurationMs) && fallbackDurationMs > 0 ? fallbackDurationMs : 20000;
-}
-
-export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDurationMs, performanceMode, panelRevealDelayMs, dynamicPanelBlur }) {
+export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDurationMs, tiempoVisualizacionSegundos, performanceMode, panelRevealDelayMs, dynamicPanelBlur }) {
   const reduceMotion = Boolean(useReducedMotion());
   const properties = Array.isArray(catalog.properties) ? catalog.properties : [];
   const companyName = catalog.company?.name || "";
   const visualTheme = catalog && catalog.visualTheme && typeof catalog.visualTheme === "object" ? catalog.visualTheme : null;
   const [propertyIndex, setPropertyIndex] = React.useState(() => resolveInitialPropertyIndex(catalog));
   const [mediaIndex, setMediaIndex] = React.useState(0);
-  const [mediaDurationMs, setMediaDurationMs] = React.useState(() => resolveMediaDurationMs(null, defaultDurationMs));
   const [panelDelayDone, setPanelDelayDone] = React.useState(() => Boolean(reduceMotion || performanceMode));
   const [qrReady, setQrReady] = React.useState(() => Boolean(reduceMotion || performanceMode));
   const [panelVisual, setPanelVisual] = React.useState(() => buildPanelVisual(DEFAULT_MEDIA_VISUAL, performanceMode));
+  const videoFallbackTimerRef = React.useRef(0);
 
   const property = properties[propertyIndex] || null;
   const media = property && Array.isArray(property.media) ? property.media[mediaIndex] || property.media[0] || null : null;
+  const duracionYComportamiento = resolveDuracionYComportamiento(property, tiempoVisualizacionSegundos);
+  const shouldWaitForVideoEnd = Boolean(media && media.type === "video" && duracionYComportamiento.reproducirVideoCompleto);
   const activeTheme = visualTheme || (property && property.theme) || null;
   const mediaPerspective = performanceMode ? "1650px" : "1450px";
   const qrUrl = property ? buildQrUrl(property, siteBaseUrl) : "";
   const panelVisible = Boolean(property) && panelDelayDone && (reduceMotion || performanceMode || qrReady);
-
-  React.useEffect(() => {
-    setMediaDurationMs(resolveMediaDurationMs(media, defaultDurationMs));
-  }, [defaultDurationMs, media && media.duration, media && media.src, media && media.type]);
 
   React.useEffect(() => {
     document.documentElement.classList.toggle("tv-performance-mode", Boolean(performanceMode));
@@ -172,6 +161,29 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
     document.title = companyName ? `${companyName} | ${property.title || property.name}` : property.title || property.name;
   }, [companyName, property, utils, visualTheme]);
 
+  const clearVideoFallbackTimer = React.useCallback(() => {
+    if (videoFallbackTimerRef.current) {
+      window.clearTimeout(videoFallbackTimerRef.current);
+      videoFallbackTimerRef.current = 0;
+    }
+  }, []);
+
+  const advanceToNextSlide = React.useCallback(() => {
+    if (properties.length === 0) {
+      return;
+    }
+
+    setPropertyIndex((value) => (value + 1) % properties.length);
+    setMediaIndex(0);
+  }, [properties.length]);
+
+  const scheduleVideoFallbackAdvance = React.useCallback(() => {
+    clearVideoFallbackTimer();
+    videoFallbackTimerRef.current = window.setTimeout(() => {
+      advanceToNextSlide();
+    }, duracionYComportamiento.duracionMs);
+  }, [advanceToNextSlide, clearVideoFallbackTimer, duracionYComportamiento.duracionMs]);
+
   React.useEffect(() => {
     if (!property || !Array.isArray(property.media) || property.media.length === 0) {
       return;
@@ -199,19 +211,24 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
     }
 
     let timerId = 0;
-    const slideDurationMs = resolveMediaDurationMs({ duration: mediaDurationMs }, defaultDurationMs);
+    const slideDurationMs = Number.isFinite(duracionYComportamiento.duracionMs) && duracionYComportamiento.duracionMs > 0
+      ? duracionYComportamiento.duracionMs
+      : defaultDurationMs;
 
-    const schedule = () => {
+    const scheduleGlobalTimer = () => {
       window.clearTimeout(timerId);
       timerId = window.setTimeout(() => {
-        if (mediaIndex < property.media.length - 1) {
-          setMediaIndex((value) => value + 1);
-          return;
-        }
-
-        setPropertyIndex((value) => (value + 1) % properties.length);
-        setMediaIndex(0);
+        advanceToNextSlide();
       }, slideDurationMs);
+    };
+
+    const schedule = () => {
+      if (shouldWaitForVideoEnd) {
+        scheduleVideoFallbackAdvance();
+        return;
+      }
+
+      scheduleGlobalTimer();
     };
 
     const handleVisibilityChange = () => {
@@ -221,6 +238,7 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
       }
 
       window.clearTimeout(timerId);
+      clearVideoFallbackTimer();
     };
 
     schedule();
@@ -228,19 +246,44 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
 
     return () => {
       window.clearTimeout(timerId);
+      clearVideoFallbackTimer();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [defaultDurationMs, media, mediaDurationMs, mediaIndex, property, properties.length]);
+  }, [
+    advanceToNextSlide,
+    clearVideoFallbackTimer,
+    defaultDurationMs,
+    duracionYComportamiento.duracionMs,
+    media,
+    scheduleVideoFallbackAdvance,
+    shouldWaitForVideoEnd,
+    property,
+  ]);
 
-  const handleMediaDurationChange = (durationMs) => {
-    if (!media || media.type !== "video") {
+  const handleMediaEnded = React.useCallback(() => {
+    if (!shouldWaitForVideoEnd) {
       return;
     }
 
-    if (Number.isFinite(durationMs) && durationMs > 0) {
-      setMediaDurationMs(durationMs);
+    clearVideoFallbackTimer();
+    advanceToNextSlide();
+  }, [advanceToNextSlide, clearVideoFallbackTimer, shouldWaitForVideoEnd]);
+
+  const handleMediaPlaybackStart = React.useCallback(() => {
+    if (!shouldWaitForVideoEnd) {
+      return;
     }
-  };
+
+    clearVideoFallbackTimer();
+  }, [clearVideoFallbackTimer, shouldWaitForVideoEnd]);
+
+  const handleMediaPlaybackError = React.useCallback(() => {
+    if (!shouldWaitForVideoEnd) {
+      return;
+    }
+
+    scheduleVideoFallbackAdvance();
+  }, [scheduleVideoFallbackAdvance, shouldWaitForVideoEnd]);
 
   return create(
     "div",
@@ -258,7 +301,19 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
       create(
         "div",
         { className: "media-stage-shell" },
-        create("div", { className: "media-stage", style: reduceMotion ? undefined : { perspective: mediaPerspective } }, create(MediaStage, { property, media, reduceMotion, performanceMode, onMediaDurationChange: handleMediaDurationChange })),
+        create(
+          "div",
+          { className: "media-stage", style: reduceMotion ? undefined : { perspective: mediaPerspective } },
+          create(MediaStage, {
+            property,
+            media,
+            reduceMotion,
+            performanceMode,
+            onMediaEnded: handleMediaEnded,
+            onMediaPlaybackStart: handleMediaPlaybackStart,
+            onMediaPlaybackError: handleMediaPlaybackError,
+          })
+        ),
         create("div", { className: "media-stage__overlay" }),
         performanceMode ? null : create("div", { className: "media-stage__glow" })
       ),

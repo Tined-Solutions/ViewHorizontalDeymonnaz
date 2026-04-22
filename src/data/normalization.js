@@ -1,8 +1,28 @@
-import { parseNumber, parsePrice, pickField, parseDuration, slugify, toBooleanFlag, resolveSurfaceValues } from './mappers.js';
+import { parseNumber, parsePrice, pickField, slugify, toBooleanFlag, resolveSurfaceValues } from './mappers.js';
 import { normalizeMedia, safeUrl } from './media.js';
 import { buildServiceFeaturesFromFlags, buildPanelMetrics } from './metrics.js';
 import { normalizeTheme, resolveVisualTheme } from './theme.js';
 import { toText, normalizeFieldToken, hasValue, toArray, isRecordActive, normalizeFeatures, normalizeDetails, joinUniqueTexts, normalizeOperationLabel, buildPropertySummary } from './utils.js';
+
+function resolveGlobalDisplaySeconds(value, fallbackSeconds = 15) {
+    const parsed = Number.parseFloat(toText(value).replace(",", "."));
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return fallbackSeconds;
+    }
+
+    return Math.max(1, Math.round(parsed));
+  }
+
+function normalizeVideoPlaybackMode(value) {
+    const mode = normalizeFieldToken(value);
+
+    if (mode === "completo") {
+      return "completo";
+    }
+
+    return "ajustar_tiempo_global";
+  }
 
 export function normalizeCompany(settings, config) {
     const source = settings && typeof settings === "object" ? settings : {};
@@ -74,9 +94,23 @@ export function normalizeProperty(doc, config) {
       return null;
     }
 
-    const fallbackDurationMs = Number(config.defaultDurationMs) || 20000;
-    const totalDurationMs = parseDuration(pickField(doc, ["durationMs", "duration_ms", "slideDurationMs", "slideDuration", "duration"]), fallbackDurationMs);
+    const fallbackDurationMs = Number(config.defaultDurationMs);
+    const totalDurationMs = Number.isFinite(fallbackDurationMs) && fallbackDurationMs > 0 ? Math.round(fallbackDurationMs) : 15000;
     const media = normalizeMedia(pickField(doc, ["media", "fotos", "images", "gallery", "galeria"]) || doc.media || doc.fotos || doc.images || doc.gallery, totalDurationMs, config);
+    const explicitVideoUrl = safeUrl(pickField(doc, ["videoUrl", "video_url", "videoMp4.asset.url"]));
+    const firstVideoMedia = media.find((item) => item && item.type === "video" && item.src);
+    const resolvedVideoUrl = explicitVideoUrl || (firstVideoMedia ? safeUrl(firstVideoMedia.src) : "");
+    const modoReproduccionVideo = normalizeVideoPlaybackMode(
+      pickField(doc, ["modoReproduccionVideo", "modo_reproduccion_video", "videoPlaybackMode"])
+    );
+
+    if (resolvedVideoUrl) {
+      media.sort((left, right) => {
+        const leftPriority = left && left.type === "video" ? 0 : 1;
+        const rightPriority = right && right.type === "video" ? 0 : 1;
+        return leftPriority - rightPriority;
+      });
+    }
 
     if (media.length === 0) {
       return null;
@@ -115,10 +149,14 @@ export function normalizeProperty(doc, config) {
       slug: toText(doc.slug?.current ?? doc.slug ?? ""),
       name,
       title: toText(doc.title ?? doc.titulo ?? name),
+      sitioPublicacion: toText(pickField(doc, ["sitioPublicacion", "sitio_de_publicacion", "publicationTarget"])),
       type,
       location,
       price: parsePrice(pickField(doc, ["price", "precio", "valor", "importe", "amount"])),
       currency: toText(pickField(doc, ["moneda", "currency", "currencyCode", "currency_code"])),
+      modoReproduccionVideo,
+      videoUrl: resolvedVideoUrl || null,
+      videoMimeType: toText(pickField(doc, ["videoMimeType", "video_mime_type", "videoMp4.asset.mimeType"])),
       badge: toText(doc.badge) || operationLabel,
       summary: buildPropertySummary(doc, type, location, operationLabel),
       publishedUrl,
@@ -173,6 +211,8 @@ export function normalizeProperty(doc, config) {
   }
 
 export function createEmptyCatalog(config = {}) {
+    const tiempoVisualizacionSegundos = resolveGlobalDisplaySeconds(config.tiempoVisualizacionSegundos, 15);
+
     return {
       company: {
         name: "",
@@ -180,6 +220,8 @@ export function createEmptyCatalog(config = {}) {
       },
       properties: [],
       siteBaseUrl: toText(config.publicBaseUrl),
+      tiempoVisualizacionSegundos,
+      defaultDurationMs: tiempoVisualizacionSegundos * 1000,
       radio: normalizeRadioSettings({}, config),
       visualTheme: resolveVisualTheme({}, config),
       state: "unconfigured",

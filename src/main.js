@@ -127,15 +127,19 @@ function App({ utils, catalogSource, sanityConfig }) {
   }, [catalogSource, sanityConfig, utils]);
 
   if (catalog && isCatalogReady(catalog)) {
-    const configuredDurationMs = Number(sanityConfig.defaultDurationMs);
+    const configuredDurationMs = Number(catalog.defaultDurationMs);
+    const configuredGlobalSeconds = Number(catalog.tiempoVisualizacionSegundos);
     const configuredPanelDelayMs = Number(sanityConfig.panelRevealDelayMs);
+    const tiempoVisualizacionSegundos = Number.isFinite(configuredGlobalSeconds) && configuredGlobalSeconds > 0 ? configuredGlobalSeconds : 15;
+    const defaultDurationMs = Number.isFinite(configuredDurationMs) && configuredDurationMs > 0 ? configuredDurationMs : tiempoVisualizacionSegundos * 1000;
 
     return create(CatalogExperience, {
       key: catalogSignature(catalog),
       catalog,
       utils,
       siteBaseUrl: catalog.siteBaseUrl || sanityConfig.publicBaseUrl || "",
-      defaultDurationMs: Number.isFinite(configuredDurationMs) && configuredDurationMs > 0 ? configuredDurationMs : 20000,
+      defaultDurationMs,
+      tiempoVisualizacionSegundos,
       performanceMode: sanityConfig.tvPerformanceMode !== false,
       panelRevealDelayMs: Number.isFinite(configuredPanelDelayMs) && configuredPanelDelayMs >= 0 ? configuredPanelDelayMs : 1000,
       dynamicPanelBlur: sanityConfig.panelDynamicBlur !== false,
