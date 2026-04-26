@@ -27,7 +27,9 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
   const activeTheme = visualTheme || (property && property.theme) || null;
   const mediaPerspective = performanceMode ? "1650px" : "1450px";
   const qrUrl = property ? buildQrUrl(property, siteBaseUrl) : "";
-  const panelVisible = Boolean(property) && panelDelayDone && (reduceMotion || performanceMode || qrReady);
+  const isSinZocaloMedia = Boolean(media && media.zocaloVariant === "sin");
+  const shouldShowZocaloPanel = Boolean(property && property.isConZocalo !== false && !isSinZocaloMedia);
+  const panelVisible = shouldShowZocaloPanel && panelDelayDone && (reduceMotion || performanceMode || qrReady);
 
   React.useEffect(() => {
     document.documentElement.classList.toggle("tv-performance-mode", Boolean(performanceMode));
@@ -111,6 +113,13 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
   React.useEffect(() => {
     let active = true;
 
+    if (!shouldShowZocaloPanel) {
+      setQrReady(true);
+      return () => {
+        active = false;
+      };
+    }
+
     if (!property || !qrUrl) {
       setQrReady(false);
       return () => {
@@ -144,7 +153,7 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
     return () => {
       active = false;
     };
-  }, [property, propertyIndex, qrUrl]);
+  }, [property, propertyIndex, qrUrl, shouldShowZocaloPanel]);
 
   React.useEffect(() => {
     const selectedTheme = visualTheme || (property && property.theme) || null;
@@ -173,9 +182,16 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
       return;
     }
 
+    const mediaItems = property && Array.isArray(property.media) ? property.media : [];
+
+    if (mediaItems.length > 0 && mediaIndex + 1 < mediaItems.length) {
+      setMediaIndex(mediaIndex + 1);
+      return;
+    }
+
     setPropertyIndex((value) => (value + 1) % properties.length);
     setMediaIndex(0);
-  }, [properties.length]);
+  }, [mediaIndex, properties.length, property]);
 
   const scheduleVideoFallbackAdvance = React.useCallback(() => {
     clearVideoFallbackTimer();
@@ -211,7 +227,12 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
     }
 
     let timerId = 0;
-    const slideDurationMs = Number.isFinite(duracionYComportamiento.duracionMs) && duracionYComportamiento.duracionMs > 0
+    const imageDurationMs = media.type === "image" && Number.isFinite(media.duration) && media.duration > 0
+      ? Math.round(media.duration)
+      : 0;
+    const slideDurationMs = imageDurationMs > 0
+      ? imageDurationMs
+      : Number.isFinite(duracionYComportamiento.duracionMs) && duracionYComportamiento.duracionMs > 0
       ? duracionYComportamiento.duracionMs
       : defaultDurationMs;
 
@@ -292,7 +313,7 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
     create(
       motion.div,
       {
-        className: "stage-frame kiosk-frame transform-gpu will-change-[transform,opacity]",
+        className: `stage-frame kiosk-frame transform-gpu will-change-[transform,opacity]${shouldShowZocaloPanel ? "" : " stage-frame--full-media"}`,
         initial: reduceMotion || performanceMode ? { opacity: 1 } : { opacity: 0, y: 14, scale: 0.99 },
         animate: reduceMotion || performanceMode
           ? { opacity: 1 }
@@ -314,8 +335,8 @@ export function CatalogExperience({ catalog, utils, siteBaseUrl, defaultDuration
             onMediaPlaybackError: handleMediaPlaybackError,
           })
         ),
-        create("div", { className: "media-stage__overlay" }),
-        performanceMode ? null : create("div", { className: "media-stage__glow" })
+        shouldShowZocaloPanel ? create("div", { className: "media-stage__overlay" }) : null,
+        performanceMode || !shouldShowZocaloPanel ? null : create("div", { className: "media-stage__glow" })
       ),
       panelVisible ? create(PropertyPanel, { property, siteBaseUrl, qrUrl, utils, reduceMotion, performanceMode, panelVisual, activeTheme }) : null
     )

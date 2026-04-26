@@ -49,10 +49,12 @@ export function buildPropertiesQuery() {
       title,
       titulo,
       sitioPublicacion,
-      modoReproduccionVideo,
+        publicacionConZocalo,
+        mantenerZocaloEnVideo,
       "videoUrl": videoMp4.asset->url,
       "videoMimeType": videoMp4.asset->mimeType,
       fotos,
+        fotosSinZocalo,
       precio,
       moneda,
       Tipo,
@@ -178,7 +180,23 @@ export function buildPropertiesQuery() {
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms)
       },
+      videoMp4{
+        ...,
+        "src": coalesce(src, url, asset->url),
+        "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url),
+        "caption": coalesce(caption, alt, title, name),
+        "duration": coalesce(duration, durationMs, duration_ms),
+        "mimeType": asset->mimeType,
+        "type": coalesce(type, mediaType, kind, _type)
+      },
       fotos[]{
+        ...,
+        "src": asset->url,
+        "poster": asset->url,
+        "caption": coalesce(caption, alt, title, name),
+        "duration": coalesce(duration, durationMs, duration_ms)
+      },
+      fotosSinZocalo[]{
         ...,
         "src": asset->url,
         "poster": asset->url,
