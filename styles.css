@@ -1501,6 +1501,11 @@ body {
     padding: clamp(0.34rem, 0.58vw, 0.48rem);
   }
 
+  .stage-frame.stage-frame--full-media {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
   .stage-frame::before,
   .stage-frame::after {
     display: none;
@@ -1515,6 +1520,10 @@ body {
     min-height: 0;
     overflow: hidden;
     border-radius: 0;
+  }
+
+  .stage-frame.stage-frame--full-media .media-stage-shell {
+    grid-column: 1 / -1;
   }
 
   .media-stage-shell::before {

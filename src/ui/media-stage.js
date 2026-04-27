@@ -1,7 +1,7 @@
 import { React, AnimatePresence, create, motion } from "../runtime/react-motion.js";
 import { clampNumber } from "../shared/math.js";
 
-export function MediaStage({ property, media, reduceMotion, performanceMode, onMediaDurationChange }) {
+export function MediaStage({ property, media, reduceMotion, performanceMode, onMediaDurationChange, onMediaEnded, onMediaPlaybackStart, onMediaPlaybackError }) {
   const isVideo = Boolean(media && media.type === "video");
   const mediaSrc = media && media.src ? media.src : "";
   const videoRef = React.useRef(null);
@@ -14,6 +14,36 @@ export function MediaStage({ property, media, reduceMotion, performanceMode, onM
     isHlsSource && typeof document !== "undefined" && document.createElement("video").canPlayType("application/vnd.apple.mpegurl")
   );
   const shouldAttachHls = Boolean(isHlsSource && !canPlayNativeHls && typeof window !== "undefined" && window.Hls && typeof window.Hls.isSupported === "function" && window.Hls.isSupported());
+
+  const emitDurationIfAvailable = React.useCallback((event) => {
+    if (typeof onMediaDurationChange !== "function") {
+      return;
+    }
+
+    const durationSeconds = Number(event.currentTarget && event.currentTarget.duration);
+
+    if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
+      onMediaDurationChange(Math.round(durationSeconds * 1000));
+    }
+  }, [onMediaDurationChange]);
+
+  const handleMediaEnded = React.useCallback(() => {
+    if (typeof onMediaEnded === "function") {
+      onMediaEnded();
+    }
+  }, [onMediaEnded]);
+
+  const handleMediaPlaybackStart = React.useCallback(() => {
+    if (typeof onMediaPlaybackStart === "function") {
+      onMediaPlaybackStart();
+    }
+  }, [onMediaPlaybackStart]);
+
+  const handleMediaPlaybackError = React.useCallback(() => {
+    if (typeof onMediaPlaybackError === "function") {
+      onMediaPlaybackError();
+    }
+  }, [onMediaPlaybackError]);
 
   React.useEffect(() => {
     if (!isVideo || !isHlsSource || !shouldAttachHls) {
@@ -32,10 +62,13 @@ export function MediaStage({ property, media, reduceMotion, performanceMode, onM
     hls.loadSource(mediaSrc);
     hls.attachMedia(videoElement);
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      videoElement.play().catch(() => {});
+      videoElement.play().catch(() => {
+        handleMediaPlaybackError();
+      });
     });
     hls.on(Hls.Events.ERROR, (_event, data) => {
       if (data && data.fatal) {
+        handleMediaPlaybackError();
         hls.destroy();
       }
     });
@@ -43,7 +76,7 @@ export function MediaStage({ property, media, reduceMotion, performanceMode, onM
     return () => {
       hls.destroy();
     };
-  }, [isHlsSource, isVideo, mediaSrc, shouldAttachHls]);
+  }, [handleMediaPlaybackError, isHlsSource, isVideo, mediaSrc, shouldAttachHls]);
 
   if (performanceMode) {
     if (!media) {
@@ -82,28 +115,11 @@ export function MediaStage({ property, media, reduceMotion, performanceMode, onM
             className: "transform-gpu",
             "aria-label": media.caption ? `${property.name} - ${media.caption}` : property.name,
             ref: videoRef,
-            onLoadedMetadata: (event) => {
-              if (typeof onMediaDurationChange !== "function") {
-                return;
-              }
-
-              const durationSeconds = Number(event.currentTarget && event.currentTarget.duration);
-
-              if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
-                onMediaDurationChange(Math.round(durationSeconds * 1000));
-              }
-            },
-            onDurationChange: (event) => {
-              if (typeof onMediaDurationChange !== "function") {
-                return;
-              }
-
-              const durationSeconds = Number(event.currentTarget && event.currentTarget.duration);
-
-              if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
-                onMediaDurationChange(Math.round(durationSeconds * 1000));
-              }
-            },
+            onLoadedMetadata: emitDurationIfAvailable,
+            onDurationChange: emitDurationIfAvailable,
+            onEnded: handleMediaEnded,
+            onPlaying: handleMediaPlaybackStart,
+            onError: handleMediaPlaybackError,
             style: { backfaceVisibility: "hidden", willChange: "auto" },
           })
         : create("img", {
@@ -219,28 +235,11 @@ export function MediaStage({ property, media, reduceMotion, performanceMode, onM
             className: "transform-gpu",
             "aria-label": media.caption ? `${property.name} - ${media.caption}` : property.name,
             ref: videoRef,
-            onLoadedMetadata: (event) => {
-              if (typeof onMediaDurationChange !== "function") {
-                return;
-              }
-
-              const durationSeconds = Number(event.currentTarget && event.currentTarget.duration);
-
-              if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
-                onMediaDurationChange(Math.round(durationSeconds * 1000));
-              }
-            },
-            onDurationChange: (event) => {
-              if (typeof onMediaDurationChange !== "function") {
-                return;
-              }
-
-              const durationSeconds = Number(event.currentTarget && event.currentTarget.duration);
-
-              if (Number.isFinite(durationSeconds) && durationSeconds > 0) {
-                onMediaDurationChange(Math.round(durationSeconds * 1000));
-              }
-            },
+            onLoadedMetadata: emitDurationIfAvailable,
+            onDurationChange: emitDurationIfAvailable,
+            onEnded: handleMediaEnded,
+            onPlaying: handleMediaPlaybackStart,
+            onError: handleMediaPlaybackError,
             style: reduceMotion ? undefined : { backfaceVisibility: "hidden", willChange: "auto" },
           })
         : create("img", {

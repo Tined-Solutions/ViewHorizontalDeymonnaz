@@ -436,6 +436,127 @@
     return Math.round(numeric);
   }
 
+  function resolveGlobalDisplaySeconds(value, fallbackSeconds = 15) {
+    const parsed = Number.parseFloat(toText(value).replace(",", "."));
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return fallbackSeconds;
+    }
+
+    return Math.max(1, Math.round(parsed));
+  }
+
+  function normalizeSitioPublicacionToken(value) {
+    const token = normalizeFieldToken(value);
+
+    if (!token) {
+      return "";
+    }
+
+    if (
+      token === "all" ||
+      token.includes("ambos") ||
+      token.includes("ambas") ||
+      token.includes("both") ||
+      token.includes("todos")
+    ) {
+      return "ambos";
+    }
+
+    if (token === "h" || token.includes("horizontal") || token.includes("landscape") || token.includes("apaisado")) {
+      return "horizontal";
+    }
+
+    if (token === "v" || token.includes("vertical") || token.includes("portrait") || token.includes("retrato")) {
+      return "vertical";
+    }
+
+    return "";
+  }
+
+  function collectSitioPublicacionTokens(value, targetSet) {
+    if (value === null || value === undefined) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => collectSitioPublicacionTokens(item, targetSet));
+      return;
+    }
+
+    if (typeof value === "object") {
+      collectSitioPublicacionTokens(value.value, targetSet);
+      collectSitioPublicacionTokens(value.label, targetSet);
+      collectSitioPublicacionTokens(value.name, targetSet);
+      collectSitioPublicacionTokens(value.title, targetSet);
+      collectSitioPublicacionTokens(value.current, targetSet);
+      return;
+    }
+
+    const text = toText(value);
+
+    if (!text) {
+      return;
+    }
+
+    const parts = text
+      .split(/[,;|/+]/g)
+      .flatMap((part) => part.split(/\s+(?:y|e|o|u|and|or)\s+/i))
+      .map((part) => toText(part))
+      .filter(Boolean);
+    const candidates = parts.length > 0 ? parts : [text];
+
+    candidates.forEach((candidate) => {
+      const normalized = normalizeSitioPublicacionToken(candidate);
+
+      if (normalized) {
+        targetSet.add(normalized);
+      }
+    });
+  }
+
+  function resolveSitioPublicacion(...values) {
+    const tokens = new Set();
+
+    values.forEach((value) => collectSitioPublicacionTokens(value, tokens));
+
+    if (tokens.has("ambos") || (tokens.has("horizontal") && tokens.has("vertical"))) {
+      return "ambos";
+    }
+
+    if (tokens.has("horizontal")) {
+      return "horizontal";
+    }
+
+    if (tokens.has("vertical")) {
+      return "vertical";
+    }
+
+    return "";
+  }
+
+  function resolvePublicacionConZocalo(value) {
+    if (!hasValue(value)) {
+      return true;
+    }
+
+    return toBooleanFlag(value);
+  }
+
+  function resolveMantenerZocaloEnVideo(value, isConZocalo) {
+    if (hasValue(value)) {
+      return toBooleanFlag(value);
+    }
+
+    return Boolean(isConZocalo);
+  }
+
+  function asImageGallery(items) {
+    return toArray(items)
+      .filter((item) => item && item.type === "image" && item.src)
+      .map((item) => ({ ...item }));
+  }
+
   function sanitizeHexColor(value, fallback) {
     const text = toText(value);
     return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(text) ? text : fallback;
@@ -930,6 +1051,10 @@
       "canalpublicacion",
       "publicationchannel",
       "publicationtarget",
+      "publicacionconzocalo",
+      "conzocalo",
+      "mantenerzocaloenvideo",
+      "videoconzocalo",
       "publicacionurl",
       "landingurl",
       "qrlink",
@@ -1529,15 +1654,54 @@
       return null;
     }
 
-    const fallbackDurationMs = Number(config.defaultDurationMs) || 20000;
-    const totalDurationMs = parseDuration(pickField(doc, ["durationMs", "duration_ms", "slideDurationMs", "slideDuration", "duration"]), fallbackDurationMs);
-    const media = normalizeMedia(
+    const fallbackDurationMs = Number(config.defaultDurationMs);
+    const totalDurationMs = Number.isFinite(fallbackDurationMs) && fallbackDurationMs > 0 ? Math.round(fallbackDurationMs) : 15000;
+    const isConZocalo = resolvePublicacionConZocalo(
+      pickField(doc, ["publicacionConZocalo", "publicacion_con_zocalo", "conZocalo", "con_zocalo"], undefined)
+    );
+    const galleryConZocalo = asImageGallery(
+      normalizeMedia(
+        [
+          pickField(doc, ["fotos", "Fotos"]),
+          pickField(doc, ["images", "Images"]),
+          pickField(doc, ["gallery", "Gallery"]),
+          pickField(doc, ["galeria", "Galeria"]),
+        ],
+        totalDurationMs,
+        config
+      )
+    );
+    const gallerySinZocalo = asImageGallery(
+      normalizeMedia([pickField(doc, ["fotosSinZocalo", "FotosSinZocalo", "fotos_sin_zocalo"])], totalDurationMs, config)
+    );
+    const gallerySinZocaloFallback = !isConZocalo && gallerySinZocalo.length === 0 && galleryConZocalo.length > 0
+      ? galleryConZocalo.map((item) => ({ ...item }))
+      : gallerySinZocalo.map((item) => ({ ...item }));
+    const totalGalleryImages = galleryConZocalo.length + gallerySinZocalo.length;
+    const safeGalleryImageCount = totalGalleryImages > 0 ? totalGalleryImages : gallerySinZocaloFallback.length;
+    const perImageDurationMs = safeGalleryImageCount > 0
+      ? Math.max(1000, Math.round(totalDurationMs / safeGalleryImageCount))
+      : totalDurationMs;
+    const galleryConZocaloWithDuration = galleryConZocalo.map((item) => ({
+      ...item,
+      duration: perImageDurationMs,
+      zocaloVariant: "con",
+    }));
+    const gallerySinZocaloWithDuration = gallerySinZocalo.map((item) => ({
+      ...item,
+      duration: perImageDurationMs,
+      zocaloVariant: "sin",
+    }));
+    const gallerySinZocaloFallbackWithDuration = gallerySinZocaloFallback.map((item) => ({
+      ...item,
+      duration: perImageDurationMs,
+      zocaloVariant: "sin",
+    }));
+    const normalizedGallerySinZocalo = gallerySinZocaloWithDuration.length > 0
+      ? gallerySinZocaloWithDuration
+      : (!isConZocalo ? gallerySinZocaloFallbackWithDuration : gallerySinZocaloWithDuration);
+    const videoMedia = normalizeMedia(
       [
-        pickField(doc, ["media", "Media"]),
-        pickField(doc, ["fotos", "Fotos"]),
-        pickField(doc, ["images", "Images"]),
-        pickField(doc, ["gallery", "Gallery"]),
-        pickField(doc, ["galeria", "Galeria"]),
         pickField(doc, ["videoMp4", "video_mp4", "videoFile", "video_file"]),
         pickField(doc, ["video", "Video"]),
         pickField(doc, ["videos", "Videos"]),
@@ -1546,7 +1710,35 @@
       ],
       totalDurationMs,
       config
+    ).filter((item) => item && item.type === "video" && item.src);
+
+    const explicitVideoUrl = safeUrl(pickField(doc, ["videoUrl", "video_url", "videoMp4.asset.url"]));
+    const firstVideoMedia = videoMedia.find((item) => item && item.type === "video" && item.src);
+    const resolvedVideoUrl = explicitVideoUrl || (firstVideoMedia ? safeUrl(firstVideoMedia.src) : "");
+    const videoItem = resolvedVideoUrl
+      ? {
+          type: "video",
+          src: resolvedVideoUrl,
+          caption: toText(firstVideoMedia && firstVideoMedia.caption),
+          duration: Number.isFinite(firstVideoMedia && firstVideoMedia.duration) ? firstVideoMedia.duration : 0,
+          poster: toText(firstVideoMedia && firstVideoMedia.poster),
+        }
+      : null;
+    const mantenerZocaloEnVideo = resolveMantenerZocaloEnVideo(
+      pickField(doc, ["mantenerZocaloEnVideo", "mantener_zocalo_en_video", "videoConZocalo"], undefined),
+      isConZocalo
     );
+    const principalGallery = isConZocalo
+      ? (() => {
+          const ordered = [...galleryConZocaloWithDuration, ...gallerySinZocaloWithDuration];
+          return ordered.length > 0 ? ordered : gallerySinZocaloFallbackWithDuration;
+        })()
+      : (normalizedGallerySinZocalo.length > 0 ? normalizedGallerySinZocalo : galleryConZocaloWithDuration);
+    const media = principalGallery.map((item) => ({ ...item }));
+
+    if (videoItem && !media.some((item) => item.type === "video" && item.src === videoItem.src)) {
+      media.unshift(videoItem);
+    }
 
     if (media.length === 0) {
       return null;
@@ -1559,13 +1751,15 @@
       pickField(doc, ["neighborhood", "barrio", "zona"]),
       pickField(doc, ["city", "ciudad"]),
     ]) || toText(pickField(doc, ["Direccion", "direccion", "address"]));
+    const qrLinkCandidato = toText(
+      pickField(doc, ["Link", "linkQr", "linkQR", "qrLink", "qr_link"])
+    );
+    const qrLinkAplicable = isConZocalo ? qrLinkCandidato : "";
     const publishedUrl = toText(
       pickField(doc, [
         "publishedUrl",
-        "Link",
         "propertyUrl",
         "publicUrl",
-        "qrLink",
         "link",
         "url",
         "href",
@@ -1575,7 +1769,11 @@
         "publicacionUrl",
         "landingUrl",
       ])
-    );
+    ) || qrLinkAplicable;
+    const sitioPublicacion =
+      resolveSitioPublicacion(
+        pickField(doc, ["sitioPublicacion", "sitio_de_publicacion", "publicationTarget", "publicarEn", "canalPublicacion"])
+      ) || "ambos";
     const surfaces = resolveSurfaceValues(doc);
 
     const metrics = buildPanelMetrics(doc);
@@ -1585,10 +1783,18 @@
       slug: toText(doc.slug?.current ?? doc.slug ?? ""),
       name,
       title: toText(doc.title ?? doc.titulo ?? name),
+      sitioPublicacion,
+      isConZocalo,
+      mantenerZocaloEnVideo,
       type,
       location,
       price: parsePrice(pickField(doc, ["price", "precio", "valor", "importe", "amount"])),
       currency: toText(pickField(doc, ["moneda", "currency", "currencyCode", "currency_code"])),
+      videoUrl: resolvedVideoUrl || null,
+      videoMimeType: toText(pickField(doc, ["videoMimeType", "video_mime_type", "videoMp4.asset.mimeType"])),
+      galleryConZocalo: galleryConZocaloWithDuration,
+      gallerySinZocalo: normalizedGallerySinZocalo,
+      qrLinkAplicable,
       badge: toText(doc.badge) || operationLabel,
       summary: buildPropertySummary(doc, type, location, operationLabel),
       publishedUrl,
@@ -1654,6 +1860,8 @@
   }
 
   function createEmptyCatalog(config = {}) {
+    const tiempoVisualizacionSegundos = resolveGlobalDisplaySeconds(config.tiempoVisualizacionSegundos, 15);
+
     return {
       company: {
         name: "",
@@ -1661,6 +1869,8 @@
       },
       properties: [],
       siteBaseUrl: toText(config.publicBaseUrl),
+      tiempoVisualizacionSegundos,
+      defaultDurationMs: tiempoVisualizacionSegundos * 1000,
       radio: normalizeRadioSettings({}, config),
       visualTheme: resolveVisualTheme({}, config),
       state: "unconfigured",
@@ -1700,6 +1910,7 @@
   function buildDashboardConfigQuery() {
     return `*[_type == "configuracionDashboard" && _id == "configuracion-dashboard"][0]{
       _id,
+      "tiempoVisualizacionSegundos": coalesce(tiempoVisualizacionSegundos, 15),
       estiloColor,
       radioActiva,
       radioSeleccionada,
@@ -1724,7 +1935,7 @@
   }
 
   function buildPropertiesQuery() {
-    return `*[_type in $propertyTypes && active != false] | order(coalesce(sortOrder, sort_order, order, rank, 0) asc, coalesce(name, title, titulo, slug.current, _id) asc) {
+    return `*[_type == "inmueble"] {
       ...,
       _id,
       _type,
@@ -1733,6 +1944,15 @@
       name,
       title,
       titulo,
+      sitioPublicacion,
+      publicacionConZocalo,
+      mantenerZocaloEnVideo,
+      "videoUrl": videoMp4.asset->url,
+      "videoMimeType": videoMp4.asset->mimeType,
+      fotos,
+      fotosSinZocalo,
+      precio,
+      moneda,
       Tipo,
       tipo,
       operacion,
@@ -1855,6 +2075,7 @@
         "poster": coalesce(poster, posterUrl, poster_image, posterImage.asset->url),
         "caption": coalesce(caption, alt, title, name),
         "duration": coalesce(duration, durationMs, duration_ms),
+        "mimeType": asset->mimeType,
         "type": coalesce(type, mediaType, kind, _type)
       },
       video{
@@ -1888,6 +2109,16 @@
         "type": coalesce(type, mediaType, kind, _type)
       },
       fotos[]{
+        ...,
+        "src": asset->url,
+        "playbackId": coalesce(asset->metadata.playbacks[policy == "public"][0]._id, video.asset->metadata.playbacks[policy == "public"][0]._id, file.asset->metadata.playbacks[policy == "public"][0]._id),
+        "durationSeconds": coalesce(asset->metadata.duration, asset->metadata.durationMs, video.asset->metadata.duration, file.asset->metadata.duration),
+        "poster": asset->url,
+        "caption": coalesce(caption, alt, title, name),
+        "duration": coalesce(duration, durationMs, duration_ms),
+        "type": coalesce(type, mediaType, kind, _type)
+      },
+      fotosSinZocalo[]{
         ...,
         "src": asset->url,
         "playbackId": coalesce(asset->metadata.playbacks[policy == "public"][0]._id, video.asset->metadata.playbacks[policy == "public"][0]._id, file.asset->metadata.playbacks[policy == "public"][0]._id),
@@ -1942,8 +2173,15 @@
         ...(settingsDocument && typeof settingsDocument === "object" ? settingsDocument : {}),
         ...(dashboardSettingsDocument && typeof dashboardSettingsDocument === "object" ? dashboardSettingsDocument : {}),
       };
+      const tiempoVisualizacionSegundos = resolveGlobalDisplaySeconds(
+        mergedSettings && mergedSettings.tiempoVisualizacionSegundos,
+        15
+      );
+      const defaultDurationMs = tiempoVisualizacionSegundos * 1000;
       const publicationTarget = resolveConfiguredPublicationTarget(config, mergedSettings);
-      const runtimeConfig = publicationTarget ? { ...config, publicationTarget } : config;
+      const runtimeConfig = publicationTarget
+        ? { ...config, publicationTarget, defaultDurationMs }
+        : { ...config, defaultDurationMs };
 
       const company = normalizeCompany(mergedSettings, config);
       let visualTheme = resolveVisualTheme(mergedSettings, config);
@@ -1963,6 +2201,8 @@
           company,
           properties,
           siteBaseUrl,
+          tiempoVisualizacionSegundos,
+          defaultDurationMs,
           radio,
           visualTheme,
           publicationTarget,
@@ -1977,6 +2217,8 @@
         company,
         properties,
         siteBaseUrl,
+        tiempoVisualizacionSegundos,
+        defaultDurationMs,
         radio,
         visualTheme,
         publicationTarget,
