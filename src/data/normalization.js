@@ -21,21 +21,42 @@ function normalizeSitioPublicacionToken(value) {
       return "";
     }
 
-    if (
+    const hasHorizontal = token.includes("horizontal") || token.includes("landscape") || token.includes("apaisado");
+    const hasVertical = token.includes("vertical") || token.includes("portrait") || token.includes("retrato");
+    const hasCremolatti = token.includes("cremolatti");
+    const hasAmbasVerticales = token.includes("ambasvertical");
+    const hasAmbos =
       token === "all" ||
       token.includes("ambos") ||
-      token.includes("ambas") ||
+      (token.includes("ambas") && !hasAmbasVerticales) ||
       token.includes("both") ||
-      token.includes("todos")
-    ) {
+      token.includes("todos");
+
+    if (hasHorizontal && hasAmbasVerticales) {
+      return "horizontal-ambas-verticales";
+    }
+
+    if (hasHorizontal && hasCremolatti && hasVertical) {
+      return "horizontal-vertical-cremolatti";
+    }
+
+    if (hasAmbasVerticales) {
+      return "ambas-verticales";
+    }
+
+    if (hasCremolatti && hasVertical) {
+      return "vertical-cremolatti";
+    }
+
+    if (hasAmbos) {
       return "ambos";
     }
 
-    if (token === "h" || token.includes("horizontal") || token.includes("landscape") || token.includes("apaisado")) {
+    if (token === "h" || hasHorizontal) {
       return "horizontal";
     }
 
-    if (token === "v" || token.includes("vertical") || token.includes("portrait") || token.includes("retrato")) {
+    if (token === "v" || hasVertical) {
       return "vertical";
     }
 
@@ -87,6 +108,30 @@ function resolveSitioPublicacion(...values) {
     const tokens = new Set();
 
     values.forEach((value) => collectSitioPublicacionTokens(value, tokens));
+
+    if (tokens.has("horizontal-ambas-verticales")) {
+      return "horizontal-ambas-verticales";
+    }
+
+    if (tokens.has("horizontal-vertical-cremolatti")) {
+      return "horizontal-vertical-cremolatti";
+    }
+
+    if (tokens.has("ambas-verticales") && tokens.has("horizontal")) {
+      return "horizontal-ambas-verticales";
+    }
+
+    if (tokens.has("vertical-cremolatti") && tokens.has("horizontal")) {
+      return "horizontal-vertical-cremolatti";
+    }
+
+    if (tokens.has("ambas-verticales")) {
+      return "ambas-verticales";
+    }
+
+    if (tokens.has("vertical-cremolatti")) {
+      return "vertical-cremolatti";
+    }
 
     if (tokens.has("ambos") || (tokens.has("horizontal") && tokens.has("vertical"))) {
       return "ambos";

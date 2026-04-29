@@ -263,6 +263,50 @@ export function collectDynamicDetails(doc, existingDetails = []) {
     return details;
   }
 
+function resolveSitioPublicacionLabel(value) {
+    const token = normalizeFieldToken(value);
+
+    if (!token) {
+      return "";
+    }
+
+    if (token.includes("horizontalambasvertical")) {
+      return "Horizontal + ambas verticales";
+    }
+
+    if (token.includes("horizontalverticalcremolatti")) {
+      return "Horizontal + vertical Cremolatti";
+    }
+
+    if (token.includes("verticalcremolatti")) {
+      return "Vertical Cremolatti";
+    }
+
+    if (token.includes("ambasvertical")) {
+      return "Ambas verticales";
+    }
+
+    if (token.includes("horizontal")) {
+      return "Horizontal";
+    }
+
+    if (token.includes("vertical")) {
+      return "Vertical Caffarati";
+    }
+
+    if (
+      token === "all" ||
+      token.includes("ambos") ||
+      token.includes("ambas") ||
+      token.includes("both") ||
+      token.includes("todos")
+    ) {
+      return "Horizontal + vertical Caffarati";
+    }
+
+    return toText(value);
+  }
+
 export function normalizeDetails(doc, property) {
     const details = [];
   const surfaces = resolveSurfaceValues(doc);
