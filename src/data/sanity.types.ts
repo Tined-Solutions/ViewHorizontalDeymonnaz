@@ -1,6 +1,13 @@
 export type OperacionInmueble = "venta" | "alquiler" | string;
 export type MonedaInmueble = "USD" | "ARS" | string;
-export type SitioPublicacion = "horizontal" | "vertical" | "ambos";
+export type SitioPublicacion =
+  | "horizontal"
+  | "vertical"
+  | "vertical-cremolatti"
+  | "ambas-verticales"
+  | "horizontal-ambas-verticales"
+  | "ambos"
+  | "horizontal-vertical-cremolatti";
 
 export interface SanityAssetReference {
   _ref?: string;
